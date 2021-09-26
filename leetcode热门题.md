@@ -146,6 +146,758 @@ class Solution {
 
 
 
+#### 5 最长回文子串
+
+可以开二维布尔数组用dp，当s\[i] == s\[j]时，dp\[i]\[j] = dp\[i + 1]\[j - 1]
+
+也可以从中心往两边扩展，以每个位置为中心向两边找最多可以对称几个，中心可以是一个点也可以是两个点，所以每个点都有两种情况，时间复杂度为O(n^2)
+
+```java
+class Solution {
+    public String longestPalindrome(String s) {
+        int left = 0, right = 0, max = 1;
+        
+        for(int i = 0; i < s.length(); i++){
+            int tmp1 = longest(i, i, s);
+            int tmp2 = longest(i, i + 1, s);
+            int tmp = Math.max(tmp1, tmp2);
+            if(tmp > max){
+                left = i - (tmp - 1) / 2;
+                right = i + tmp / 2;
+                max = tmp;
+            }    
+        }
+        return s.substring(left, right + 1);
+    }
+    public int longest(int left, int right, String s){
+        while(left >= 0 && right < s.length()){
+            if(s.charAt(left) == s.charAt(right)){    
+                left--;
+                right++;
+            }
+            else break;
+        }
+        return right - left - 1;
+    }
+}
+```
+
+
+
+#### 6 Z字形变换
+
+将一个给定字符串 s 根据给定的行数 numRows ，以从上往下、从左到右进行 Z 字形排列。
+
+比如输入字符串为 "PAYPALISHIRING" 行数为 3 时，排列如下：
+
+```
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+
+之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如："PAHNAPLSIIGYIR"。
+
+```java
+class Solution {
+    public String convert(String s, int numRows) {
+        boolean flag = true;
+        if(numRows == 1) return s;//！！！注意！！！
+        StringBuilder[] strbs = new StringBuilder[numRows];
+        for(int i = 0; i < numRows; i++){
+            strbs[i] = new StringBuilder();
+        }//必须初始化！！！否则报空指针
+        int row = 0;
+        for(int i = 0; i < s.length(); i++){
+            strbs[row].append(s.charAt(i));
+            if(row == numRows - 1){
+                flag = false;
+            }
+            if(row == 0){
+                flag = true;
+            }
+            if(flag){
+                row++;
+            }
+            else{
+                row--;
+            }
+        }
+        StringBuilder res = new StringBuilder();
+        for(int i = 0; i < numRows; i++){
+            res.append(strbs[i]);
+        }
+        return res.toString();
+    }
+}
+```
+
+**注意：**numRows = 1, s = "AB" 这种情况需要特殊处理
+
+ 
+
+#### 7 整数反转（错了两次的简单题）
+
+```java
+class Solution {
+    public int reverse(int x) {
+        boolean flag = true;
+        if(x == -2147483648) return 0;
+        if(x < 0){
+            flag = false;
+            x = -x;
+        }
+        int y = 0;
+        while(x != 0){
+            if(y > 214748364 || (y == 214748364 && x % 10 > 8) || (y == 214748364 && x % 10 == 8 && flag == true)){
+                return 0;
+            }
+            y = y * 10 + x % 10;
+            x = x / 10;
+        }
+        return flag ? y : -y;
+    }
+}
+```
+
+这题唯一的难点是**假设环境不允许存储 64 位整数（有符号或无符号）**，如果反转后整数超过 32 位的有符号整数的范围 `[−2^31, 2^31 − 1]` ，就返回 0。
+
+所以需要在累加的时候加入一个判断
+
+**注意：**比较特殊的输入为-2147483648，这个输入不能用x = -x这样的做法，会导致越界
+
+经过观察后发现，负数可以和正数合并，而且不需要考虑y=214748364时下一位可能是8或者9，因为如果是的话，原来的数肯定是越界的，所以代码可以精简如下：
+
+```java
+class Solution {
+    public int reverse(int x) {
+        int y = 0;
+        while(x != 0){
+            if(y > 214748364 || y < -214748364){
+                return 0;
+            }
+            y = y * 10 + x % 10;
+            x = x / 10;
+        }
+        return y;
+    }
+}
+```
+
+
+
+#### 8 字符串转换整数
+
+请你来实现一个 myAtoi(string s) 函数，使其能将字符串转换成一个 32 位有符号整数（类似 C/C++ 中的 atoi 函数）。
+
+函数 myAtoi(string s) 的算法如下：
+
+读入字符串并丢弃无用的前导空格
+检查下一个字符（假设还未到字符末尾）为正还是负号，读取该字符（如果有）。 确定最终结果是负数还是正数。 如果两者都不存在，则假定结果为正。
+读入下一个字符，直到到达下一个非数字字符或到达输入的结尾。字符串的其余部分将被忽略。
+将前面步骤读入的这些数字转换为整数（即，"123" -> 123， "0032" -> 32）。如果没有读入数字，则整数为 0 。必要时更改符号（从步骤 2 开始）。
+如果整数数超过 32 位有符号整数范围 [−231,  231 − 1] ，需要截断这个整数，使其保持在这个范围内。具体来说，小于 −231 的整数应该被固定为 −231 ，大于 231 − 1 的整数应该被固定为 231 − 1 。
+返回整数作为最终结果。
+注意：
+
+本题中的空白字符只包括空格字符 ' ' 。
+除前导空格或数字后的其余字符串外，请勿忽略 任何其他字符。
+
+```java
+class Solution {
+    public int myAtoi(String s) {
+        s = s.trim();
+        if(s.length() == 0) return 0;//记得考虑s为空字符串的情况
+        boolean flag = true;
+        int cur_pos = 0;
+        if(s.charAt(cur_pos) == '-'){
+            flag = false;
+            cur_pos++;
+        }
+        else if(s.charAt(cur_pos) == '+'){
+            cur_pos++;
+        } 
+        
+        int sum = 0;
+        while(cur_pos < s.length()){
+            if(s.charAt(cur_pos) > '9' || s.charAt(cur_pos) < '0'){
+                break;
+            }
+            int cur = s.charAt(cur_pos) - '0';            
+            if(sum > 214748364 || (sum == 214748364 && cur > 7)){
+                return flag == true ? 2147483647 : -2147483648; 
+            }
+            sum = sum * 10 + cur;
+            cur_pos++;           
+        }
+        return flag == true ? sum : -sum;//第一次提交的时候这里忘记判断flag了，记得判断！
+    }
+}
+```
+
+这道题挺简单的，只需要整数，但也要注意数组越界的问题和返回值要加正负
+
+
+
+#### 9 回文数
+
+这是一开始的想法
+
+```java
+class Solution {
+    public boolean isPalindrome(int x) {
+        if(x < 0) return false;
+        List<Integer> list = new ArrayList<>();
+        while(x != 0){
+            list.add(x % 10);
+            x /= 10;
+        }
+        int left = 0, right = list.size() - 1;
+        while(left < right){
+            if(list.get(left) != list.get(right)) return false;
+            left++;
+            right--;
+        }
+        return true;
+    }
+}
+```
+
+后来想到可以这么做，其实就是翻转数字加一个比较
+
+```java
+class Solution {
+    public boolean isPalindrome(int x) {
+        if(x < 0) return false;
+        int sum = 0, y = x;
+        while(x > 0){
+            sum = sum * 10 + x % 10;
+            x /= 10;
+        }
+        return sum == y;
+    }
+}
+```
+
+看了题解发现忘记考虑int越界的问题了，还侥幸过了
+
+题解的思路是只翻转一半就进行比较，可以避免越界，重点在于判断到达一半了没
+
+```java
+class Solution {
+    public boolean isPalindrome(int x) {
+        if(x < 0) return false;
+        if(x == 0) return true;
+        if(x % 10 == 0) return false;//这三行很重要！
+        int sum = 0;
+        while(x > 0){
+            sum = sum * 10 + x % 10;
+            x /= 10;        
+            if(sum >= x) break;
+        }
+        return sum == x || sum / 10 == x;
+    }
+}
+```
+
+这种写法写错了好几次，易错点是以0结尾但不是0的数字，应该作为特殊情况处理
+
+
+
+#### 11 盛最多水的容器（没想到是双指针）
+
+其实还有点贪心的感觉，一开始一直想单调栈之类的，后来看了题解才发现完全想错了
+
+看懂怎么贪心之后就很好做了，一左一右两个指针，把比较小的那个往里移，不断计算并存储最大值就行了
+
+```java
+class Solution {
+    public int maxArea(int[] height) {
+        int left = 0, right = height.length - 1;
+        int res = 0;
+        while(left < right){
+            res = Math.max(res, Math.min(height[left], height[right]) * (right - left));
+            if(height[left] < height[right]){
+                left++;
+            }
+            else{
+                right--;
+            }
+        }
+        return res;
+    }
+}
+```
+
+
+
+#### 12 整数转罗马数字（没想到是贪心）
+
+我最开始的做法：
+
+从高位到地位模拟，说实话**很傻**，如果数字范围再大点就不能这么搞了
+
+```java
+class Solution {
+    public String intToRoman(int num) {
+        StringBuilder strb = new StringBuilder();
+        int cur = num / 1000;
+        while(cur >= 1){
+            strb.append("M");
+            cur--;
+        }
+        num = num % 1000;
+        cur = num / 100;
+        if(cur == 9) strb.append("CM");
+        else if(cur == 4) strb.append("CD");
+        else if(cur >= 5){
+            strb.append("D");
+            while(cur > 5){
+                strb.append("C");
+                cur--;
+            }
+        }
+        else if(cur > 0 && cur < 4){
+            while(cur > 0){
+                strb.append("C");
+                cur--;
+            }
+        }
+        num = num % 100;
+        cur = num / 10;
+        if(cur == 9) strb.append("XC");
+        else if(cur == 4) strb.append("XL");
+        else if(cur >= 5){
+            strb.append("L");
+            while(cur > 5){
+                strb.append("X");
+                cur--;
+            }
+        }
+        else if(cur > 0 && cur < 4){
+            while(cur > 0){
+                strb.append("X");
+                cur--;
+            }
+        }
+        num = num % 10;
+        cur = num;
+        if(cur == 9) strb.append("IX");
+        else if(cur == 4) strb.append("IV");
+        else if(cur >= 5){
+            strb.append("V");
+            while(cur > 5){
+                strb.append("I");
+                cur--;
+            }
+        }
+        else if(cur > 0 && cur < 4){
+            while(cur > 0){
+                strb.append("I");
+                cur--;
+            }
+        }
+        return strb.toString();
+    }
+}
+```
+
+这是我在leetcode里写过的最长的代码，用时和内存消耗倒是都击败了99，98
+
+后来写了个比较短的版本，反而内存消耗比较大
+
+```java
+class Solution {
+    public String intToRoman(int num) {
+        StringBuilder strb = new StringBuilder();
+        String[][] nums = {{"", "M", "MM", "MMM", "", "", "", "", "", ""},
+                            {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"},
+                            {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"},
+                            {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"}};
+        int cur = 0;
+        int divide = 1000;
+        int i = 0;
+        while(num != 0){
+            cur = num / divide;    
+            strb.append(nums[i][cur]);    
+            num %= divide; 
+            divide /= 10;
+            i++;
+        }
+        return strb.toString();
+    }
+} 
+```
+
+最后看了题解，我还是太傻了
+
+**硬编码**
+
+就是上面第二种做法的改进版，直接计算出个十百千位，就是没想到时间空间复杂度居然会输那么多
+
+```java
+class Solution {
+    public String intToRoman(int num) {
+        StringBuilder strb = new StringBuilder();
+        String[][] nums = {{"", "M", "MM", "MMM", "", "", "", "", "", ""},
+                            {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"},
+                            {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"},
+                            {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"}};
+        
+        return nums[0][num / 1000] + nums[1][num % 1000 / 100] + nums[2][num % 100 / 10] + nums[3][num % 10]; 
+    }
+} 
+```
+
+**贪心**
+
+> 我们用来确定罗马数字的规则是：对于罗马数字从左到右的每一位，选择尽可能大的符号值。
+>
+> 根据罗马数字的唯一表示法，为了表示一个给定的整数num，我们寻找不超过num的最大符号值，将num减去该符号值，然后继续寻找不超过num的最大符号值，将该符号拼接在上一个找到的符号之后，循环直至num为0。最后得到的字符串即为num的罗马数字表示。
+>
+> 编程时，可以建立一个数值-符号对的列表，按数值从大到小排列。遍历列表中的每个数值-符号对，若当前数值value不超过num，则从num 中不断减去value，直至num小于value，然后遍历下一个数值-符号对。若遍历中num为0则跳出循环。
+>
+
+```java
+class Solution {
+    int[] values = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+    String[] symbols = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+
+    public String intToRoman(int num) {
+        StringBuffer roman = new StringBuffer();
+        for(int i = 0; i < values.length; i++){
+
+            while(num >= values[i]){
+                roman.append(symbols[i]);
+                num -= values[i];
+            }
+            if(num == 0) break;
+        }
+        return roman.toString();
+    }
+}
+```
+
+
+
+#### 13 罗马数字转整数
+
+和上一题很相似，所以直接就用了相似的思路，贪心
+
+```java
+class Solution {
+    int[] values = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+    String[] symbols = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+    public int romanToInt(String s) {
+        int res = 0;
+        for(int i = 0; i < symbols.length; i++){
+            while(s.startsWith(symbols[i])){
+                res += values[i];
+                s = s.substring(symbols[i].length());
+            }
+        }
+        return res;
+    }
+}
+```
+
+结果题解居然搞模拟，一个字符一个字符地读，如果这个字符比后一个小，就减，否则就加，最后时间空间也没比我这个好
+
+
+
+#### 14 最长公共前缀
+
+编写一个函数来查找字符串数组中的最长公共前缀。
+
+如果不存在公共前缀，返回空字符串 `""`。
+
+浪费了大量时间在函数调用报错上，因为python写太多把小括号写成中括号了
+
+还有一次报错是因为没有考虑到第一个字符为空字符串的情况导致的数组越界
+
+```java
+class Solution {
+    public String longestCommonPrefix(String[] strs) {
+        int pos = 0;
+        while(true){
+            if(pos >= strs[0].length()) break;
+            for(int i = 1; i < strs.length; i++){
+                if(pos >= strs[i].length() || strs[i].charAt(pos) != strs[0].charAt(pos)){
+                    if(pos == 0) return "";
+                    else return strs[0].substring(0, pos);
+                }
+            }
+            pos++;
+            
+        }
+        if(pos == 0) return "";
+        return strs[0];
+    }
+}
+```
+
+做法有好几种，这是最容易想到的而且时间空间复杂度也比较低
+
+
+
+#### 15 三数之和（经典面试题，双指针变体）
+
+给你一个包含 n 个整数的数组 nums，判断 nums 中是否存在三个元素 a，b，c ，使得 a + b + c = 0 ？请你找出所有和为 0 且不重复的三元组。
+
+注意：答案中不可以包含重复的三元组。
+
+看完题目没有思路，看了题解才明白是先利用排序避免重复，再利用双指针避免三重循环
+
+但还是有各种判断和边界条件，需要考虑是否重复
+
+所以自己写的第一版很混乱，加了很多条件语句
+
+后来参考了题解写出了新的一版：
+
+```java
+class Solution {
+    public List<List<Integer>> threeSum(int[] nums) {
+        List<List<Integer>> list = new ArrayList<>();
+        Arrays.sort(nums);
+        for(int i = 0; i < nums.length; i++){
+            if(i > 0 && nums[i] == nums[i - 1]) continue;
+            else {
+                int k = nums.length - 1;
+                for(int j = i + 1; j < k; j++){
+                    if(j > i + 1 && nums[j] == nums[j - 1]) continue;
+                    else{
+                        while(k > j && nums[i] + nums[j] + nums[k] > 0){
+                            k--;
+                        }
+                        if(j >= k) break;//这一步很重要！
+                        if(nums[i] + nums[j] + nums[k] == 0){
+                            List<Integer> newList = new ArrayList<>();
+                            newList.add(nums[i]);
+                            newList.add(nums[j]);
+                            newList.add(nums[k]);
+                            list.add(newList);
+                        } 
+                    }
+                }
+            }
+        }
+        return list;
+    }   
+}
+```
+
+这个做法是i和j都用更清晰的for循环，如果i和j都和之前不重复的话，k肯定也不重复，利用了这个特性减少了k的判断，代码更简洁，而使用for而不是while也减少了额外对j的判断和操作
+
+在双指针遍历的时候，先固定左指针（外层循环），将右指针左移直到和不大于target（里层循环），然后判断
+
+可以测试的边界例子有：[0, 0, 0], [-1, 0, 1], [0, 0, 1]等
+
+
+
+#### 16 最接近的三数之和
+
+给定一个包括 n 个整数的数组 nums 和 一个目标值 target。找出 nums 中的三个整数，使得它们的和与 target 最接近。返回这三个数的和。假定每组输入只存在唯一答案。
+
+输入：nums = [-1,2,1,-4], target = 1
+输出：2
+解释：与 target 最接近的和是 2 (-1 + 2 + 1 = 2) 。
+
+我把前一题的代码改吧改吧写的下面这个：
+
+```java
+class Solution {
+    public int threeSumClosest(int[] nums, int target) {
+        int res = nums[0] + nums[1] + nums[2];
+        Arrays.sort(nums);
+        for(int i = 0; i < nums.length; i++){
+            if(i > 0 && nums[i] == nums[i - 1]) continue;
+            else {
+                int k = nums.length - 1;
+                for(int j = i + 1; j < k; j++){
+                    if(j > i + 1 && nums[j] == nums[j - 1]) continue;
+                    else{
+                        while(k > j && nums[i] + nums[j] + nums[k] > target){
+                            k--;
+                        }
+                        if(j >= k){//这里和前一题不一样，不一定会找到和小于target的，所以不能直接break
+                            int sum = nums[i] + nums[j] + nums[j + 1];
+                            if(Math.abs(sum - target) < Math.abs(res - target)) res = sum;
+                            break;
+                        }
+                        int sum1 = nums[i] + nums[j] + nums[k];
+                        
+                        int sum2 = (k < nums.length - 1) ? nums[i] + nums[j] + nums[k + 1] : sum1;
+                        if(Math.abs(sum1 - target) <= Math.abs(sum2 - target) && Math.abs(sum1 - target) < Math.abs(res - target)){
+                            res = sum1;
+                        } 
+                        else if(Math.abs(sum2 - target) < Math.abs(sum1 - target) && Math.abs(sum2 - target) < Math.abs(res - target)){
+                            res = sum2;
+                        } 
+                    }
+                }
+            }
+        }
+        return res;
+    }
+}
+```
+
+后来看了题解发现我又写麻烦了，题解的写法比较清晰，就是每次计算三个数的和，和target比较，看有没有比之前的结果更接近，决定左右指针要怎么移
+
+```java
+class Solution {
+    public int threeSumClosest(int[] nums, int target) {
+        Arrays.sort(nums);
+        int n = nums.length;
+        int best = 10000000;
+
+        for(int i = 0; i < nums.length; i++){
+            if(i > 0 && nums[i] == nums[i - 1]) continue;
+            else{
+                int j = i + 1, k = nums.length - 1;
+                while(j < k){
+                    int sum = nums[i] + nums[j] + nums[k];
+                    if(sum == target) return target;
+                    if(Math.abs(best - target) > Math.abs(sum - target)) best = sum;//这步很重要！
+                    if(sum > target){
+                        k--;
+                        while(k > j && nums[k] == nums[k + 1]) k--;
+                    }
+                    else{
+                        j++;
+                        while(j < k && nums[j] == nums[j - 1]) j++;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+}
+```
+
+陷入了巨大的困惑，为什么相似的两道题题解的做法不一样而且都是更快，时间复杂度都是O(N^2)，但我写的就是更慢些，但其实也就差3ms
+
+
+
+#### 17 电话号码的数字组合（backtracking经典）
+
+```java
+class Solution {
+    private static final String[] KEYS = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+    public List<String> letterCombinations(String digits) {
+        List<String> list = new ArrayList<>();
+        if(digits.length() == 0) return list; //记得判空
+        StringBuilder strb = new StringBuilder();
+        search(list, strb, digits, 0);
+        return list;
+    }
+    //其实这个pos参数可以用strb.length()代替
+    public void search(List<String> list, StringBuilder strb, String digits, int pos){
+        if(pos == digits.length()){
+            list.add(strb.toString());
+            return;
+        }
+        String cur = KEYS[digits.charAt(pos) - '0'];
+        for(int i = 0; i < cur.length(); i++){
+            strb.append(cur.charAt(i));
+            search(list, strb, digits, pos + 1);
+            strb.deleteCharAt(strb.length() - 1);
+        }
+        return;
+    }
+}
+```
+
+
+
+#### 18 四数之和
+
+做法类似三数之和，时间复杂度O(N^3)，可以加入剪枝操作：
+
+> 在确定第一个数之后，如果nums[i] + nums[i + 1] + nums[i + 2] + nums[i + 3] > target，说明此时剩下的三个数无论取什么值，四数之和一定大于target，因此退出第一重循环；
+> 在确定第一个数之后，如果nums[i] + nums[j] + nums[len - 2] + nums[len - 1] < target，说明此时剩下的三个数无论取什么值，四数之和一定小于target，因此第一重循环直接进入下一轮，枚举nums[i+1]；
+> 在确定前两个数之后，如果nums[i] + nums[j] + nums[j + 1] + nums[j + 2] > target，说明此时剩下的两个数无论取什么值，四数之和一定大于target，因此退出第二重循环；
+> 在确定前两个数之后，如果nums[i] + nums[j] + nums[j + 1] + nums[j + 2] > target，说明此时剩下的两个数无论取什么值，四数之和一定小于 target，因此第二重循环直接进入下一轮，枚举nums[j+1]。
+
+
+
+```java
+class Solution {
+    public List<List<Integer>> fourSum(int[] nums, int target) {
+        List<List<Integer>> res = new ArrayList<>();
+        int len = nums.length;
+        if(len < 4) return res;
+        Arrays.sort(nums);
+        for(int i = 0; i < len - 3; i++){//这里是len - 3不是len，否则会数组越界
+            if(i > 0 && nums[i] == nums[i - 1]) continue;
+            if(nums[i] + nums[len - 3] + nums[len - 2] + nums[len - 1] < target) continue;
+            if(nums[i] + nums[i + 1] + nums[i + 2] + nums[i + 3] > target) break;
+            for(int j = i + 1; j < len - 2; j++){//这里是len - 2不是len
+                if(j > i + 1 && nums[j] == nums[j - 1]) continue;
+                if(nums[i] + nums[j] + nums[len - 2] + nums[len - 1] < target) continue;
+                if(nums[i] + nums[j] + nums[j + 1] + nums[j + 2] > target) break;
+                int right = len - 1;
+                for(int left = j + 1; left < right; left++){
+                    if(left > j + 1 && nums[left] == nums[left - 1]) continue;
+                    while(left < right && nums[i] + nums[j] + nums[left] + nums[right] > target) right--;
+                    //while循环里记得加left < right，否则下一个if语句里得写成left <= right
+                    if(left == right) break;
+                    if(nums[i] + nums[j] + nums[left] + nums[right] == target){
+                        List<Integer> list = new ArrayList<>();
+                        list.add(nums[i]);
+                        list.add(nums[j]);
+                        list.add(nums[left]);
+                        list.add(nums[right]);
+                        res.add(list);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+}
+```
+
+
+
+#### 19 删除链表的倒数第N个结点
+
+经典题，用两个指针实现一次遍历实现，当第一个指针指到最后一个的时候第二个指针指向要删的结点的前一个结点
+
+注意几种特殊情况，链表为空，**删第一个结点**，删最后一个结点
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode pre = head;
+        ListNode cur = head;
+        for(int i = 0; i < n; i++){
+            pre = pre.next;
+        }
+        if(pre == null) return head.next;
+        while(pre.next != null){
+            pre = pre.next;
+            cur = cur.next;
+        }
+        cur.next = cur.next.next;
+        return head;
+    }
+}
+```
+
+
+
 #### 20 有效的括号
 
 给定一个只包括 '('，')'，'{'，'}'，'['，']' 的字符串 s ，判断字符串是否有效。
@@ -182,6 +934,55 @@ class Solution {
     }
 }
 ```
+
+
+
+#### 21 合并两个有序链表（经典题）
+
+将两个升序链表合并为一个新的升序链表并返回。新链表是通过拼接给定的两个链表的所有节点组成的。 
+
+类似于归并排序，特点是不能开辟新空间，头脑混乱的时候会想不出来怎么做。其实代码很简单
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        if(l1 == null) return l2;
+        if(l2 == null) return l1;
+        ListNode head = new ListNode();
+        ListNode iter = head;
+        while(l1 != null && l2 != null){
+            if(l1.val <= l2.val){
+                iter.next = l1;
+                l1 = l1.next;// 要先保存新的l1
+            }
+            else{
+                iter.next = l2;
+                l2 = l2.next;
+            }
+            iter = iter.next;// 再保存新的iter
+        }
+        if(l1 == null){
+            iter.next = l2;
+        }
+        else{
+            iter.next = l1;
+        }
+        return head.next;    
+    }
+}
+```
+
+需要不断保存当前两个未处理的链表的头结点
 
 
 
