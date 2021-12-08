@@ -144,7 +144,7 @@ class Solution {
 
 做过很多遍居然还是忘记怎么做了，只知道用set来判断是否重复，看了题解才知道是用双指针来做。。。哎
 
-
+#### 4
 
 #### 5 最长回文子串
 
@@ -403,7 +403,7 @@ class Solution {
 
 这种写法写错了好几次，易错点是以0结尾但不是0的数字，应该作为特殊情况处理
 
-
+#### 10
 
 #### 11 盛最多水的容器（没想到是双指针）
 
@@ -983,6 +983,350 @@ class Solution {
 ```
 
 需要不断保存当前两个未处理的链表的头结点
+
+
+
+#### 22 括号生成
+
+数字 `n` 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 **有效的** 括号组合。
+
+```
+输入：n = 3
+输出：["((()))","(()())","(())()","()(())","()()()"]
+```
+
+把问题想得太复杂了，看了题解才意识到其实是简单的**回溯**题
+
+重点是：在加括号的时候保证每一步都是正确的，有两个规则
+
++ 当左括号的数量不超过规定数量时，可以加左括号
++ 当右括号的数量小于左括号时，可以加右括号
+
+这样可以保证得到的最终结果一定是正确的组合，就不需要再验证一次是否有效
+
+```java
+class Solution {
+    public List<String> generateParenthesis(int n) {
+        List<String> result = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        generateParenthesis(current, 0, 0, n, result);
+        return result;
+    }
+    public void generateParenthesis(StringBuilder current, int leftCount, int rightCount, int max, List<String> result){
+        if (current.length() == max * 2){
+            result.add(current.toString());
+        }
+        if (leftCount < max) {
+            current.append("(");
+            generateParenthesis(current, leftCount + 1, rightCount, max, result);
+            current.deleteCharAt(current.length() - 1);
+        }
+        if (rightCount < leftCount) {
+            current.append(")");
+            generateParenthesis(current, leftCount, rightCount + 1, max, result);
+            current.deleteCharAt(current.length() - 1);
+        }
+    }
+}
+```
+
+
+
+#### 23 合并k个升序链表（归并：分治或者优先队列）
+
+给你一个链表数组，每个链表都已经按升序排列。
+
+请你将所有链表合并到一个升序链表中，返回合并后的链表。
+
+```
+输入：lists = [[1,4,5],[1,3,4],[2,6]]
+输出：[1,1,2,3,4,4,5,6]
+解释：链表数组如下：
+[
+  1->4->5,
+  1->3->4,
+  2->6
+]
+将它们合并到一个有序链表中得到。
+1->1->2->3->4->4->5->6
+```
+
+这道题虽然是hard但其实很基础，只是合并两个升序链表的变体，如果能把合并两个写好，再掌握这道题要用的，例如优先队列，就没那么难
+
+合并两个链表感觉很简单但也有些小坑
+
++ 定义一个虚头节点
++ 当前的指针和被选中的指针要记得不断向后移动
++ 记得判断在处理的两个节点有没有空
+
+这道题用优先队列的写法：
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        PriorityQueue<ListNode> queue = new PriorityQueue<ListNode>(new Comparator<ListNode>(){
+            public int compare(ListNode o1, ListNode o2){
+                return o1.val - o2.val;
+            }
+        });
+        ListNode head = new ListNode();
+        ListNode curr = head;
+        for(int i = 0; i < lists.length; i++){
+            if(lists[i] != null){
+                queue.add(lists[i]);
+            }
+        }
+        while(!queue.isEmpty()){
+            ListNode next = queue.poll();
+            curr.next = next;
+            if(next.next != null){
+                queue.add(next.next);
+            }
+            curr = next;            
+        }
+        return head.next;
+    }
+}
+```
+
++ 优先队列的语法
++ queue poll一个出去之后，如果出去的那个节点还有next的话就把next加进去（不知道为啥写的时候死活不知道要这么写，还在纠结要怎么更新queue）
++ queue在add的时候要记得判空，不要把null加进queue里了
++ head要new，不然没有next属性
+
+
+
+归并的写法：
+
+```java
+class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        int l = 0, r = lists.length - 1;
+        return mergeKLists(lists, l, r);
+    }
+
+    public ListNode mergeKLists(ListNode[] lists, int l, int r){
+        if(l == r) return lists[l];
+        if(l > r) return null; // 处理lists为空的情况
+        int mid = l + (r - l) / 2;
+        return mergeTwoLists(mergeKLists(lists, l, mid), mergeKLists(lists, mid + 1, r));
+    }
+
+    public ListNode mergeTwoLists(ListNode left, ListNode right){
+        ListNode head = new ListNode();
+        ListNode curr = head;
+        while(left != null && right != null){
+            if(left.val < right.val){
+                curr.next = left;
+                left = left.next;
+            }
+            else{
+                curr.next = right;
+                right = right.next;
+            }
+            curr = curr.next;
+        }
+        curr.next = (left == null ? right : left);
+        return head.next;
+    }
+}
+```
+
+分治归并比优先队列略好写点
+
+两种写法都要考虑lists为空，lists[i]为空的情况
+
+
+
+#### 24 两两交换链表中的节点
+
+给你一个链表，两两交换其中相邻的节点，并返回交换后链表的头节点。你必须在不修改节点内部的值的情况下完成本题（即，只能进行节点交换）。
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode swapPairs(ListNode head) {
+        ListNode preHead = new ListNode(0, head);
+        ListNode pre = preHead;
+        ListNode cur = head;
+        ListNode next;
+        while(cur != null){
+            next = cur.next;
+            if(next == null) break;
+            pre.next = next;
+            cur.next = next.next;
+            next.next = cur;
+            pre = cur;
+            cur = pre.next;
+        }
+        return preHead.next;
+    }
+}
+```
+
++ 比较麻烦的点是要处理[1]和[]和[1,2,3]这种情况，需要对cur和next指针进行判空
+
+
+
+#### 25 k个一组翻转链表（经典题变种）
+
+给你一个链表，每 k 个节点一组进行翻转，请你返回翻转后的链表。
+
+k 是一个正整数，它的值小于或等于链表的长度。
+
+如果节点总数不是 k 的整数倍，那么请将最后剩余的节点保持原有顺序。
+
+进阶：
+
+你可以设计一个只使用常数额外空间的算法来解决此问题吗？
+你不能只是单纯的改变节点内部的值，而是需要实际进行节点交换。
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode dummyHead = new ListNode(0, head);
+        ListNode pre = dummyHead;
+        ListNode newTail = head;
+        ListNode newHead = pre;
+        while(newHead != null){
+            for(int i = 0; i < k; i++){        
+                newHead = newHead.next;//这两句的顺序很重要
+                if(newHead == null) return dummyHead.next;
+            }
+            ListNode nextTail = newHead.next;
+            reverse(newTail, newHead);
+            newTail.next = nextTail;
+            pre.next = newHead;
+            pre = newTail;
+            newHead = pre;
+            newTail = pre.next;
+        }
+        
+        return dummyHead.next;
+
+    }
+    public void reverse(ListNode newTail, ListNode newHead){
+        ListNode pre = null;
+        ListNode cur = newTail;
+        ListNode next;
+        while(pre != newHead){//!!!这里的条件必须用到newHead,如果用cur != null的话会把整个链表都翻转。这里只翻转从newTail到newHead的部分
+            next = cur.next;
+            cur.next = pre;
+            pre = cur;
+            cur = next;     
+        }
+    }
+}
+```
+
++ 这道题其实不难，主要是感觉很复杂就一直不想做，其实就是进阶的翻转链表
++ 外层需要保存四个指针感觉比较繁琐，还需要判断如果这一段不到k个的话直接return
++ 里层的翻转链表需要保存三个指针，循环结束的条件需要注意
+
+
+
+#### 26 删除有序数组中的重复项
+
+给你一个有序数组 nums ，请你 原地 删除重复出现的元素，使每个元素 只出现一次 ，返回删除后数组的新长度。
+
+不要使用额外的数组空间，你必须在 原地 修改输入数组 并在使用 O(1) 额外空间的条件下完成。
+
+代码很简单，主要思路是维护一个`nextPos`变量表示下一个不重复的元素应该放的位置。遍历数组，如果当前元素与前一个元素不相等，就放过去，然后更新`nextPos`
+
+```java
+class Solution {
+    public int removeDuplicates(int[] nums) {
+        int nextPos= 1;
+        for(int i = 1; i < nums.length; i++) {
+            if(nums[i] != nums[i - 1]) {
+                nums[nextPos] = nums[i];
+                nextPos++;
+            }
+        }
+        return nextPos;
+    }
+}
+```
+
+
+
+#### 27 移除元素
+
+给你一个数组 nums 和一个值 val，你需要 原地 移除所有数值等于 val 的元素，并返回移除后数组的新长度。
+
+不要使用额外的数组空间，你必须仅使用 O(1) 额外空间并 原地 修改输入数组。
+
+元素的顺序可以改变。你不需要考虑数组中超出新长度后面的元素。
+
+和上一题几乎一样
+
+```java
+class Solution {
+    public int removeElement(int[] nums, int val) {
+        int nextPos= 0;
+        for(int i = 0; i < nums.length; i++) {
+            if(nums[i] != val) {
+                nums[nextPos] = nums[i];
+                nextPos++;
+            }
+        }
+        return nextPos;
+    }
+}
+```
+
+#### 28
+
+#### 29
+
+#### 30 串联所有单词的子串
+
+给定一个字符串 s 和一些 长度相同 的单词 words 。找出 s 中恰好可以由 words 中所有单词串联形成的子串的起始位置。
+
+注意子串要与 words 中的单词完全匹配，中间不能有其他字符 ，但不需要考虑 words 中单词串联的顺序。
+
+示例 1：
+
+```
+输入：s = "barfoothefoobarman", words = ["foo","bar"]
+输出：[0,9]
+解释：
+从索引 0 和 9 开始的子串分别是 "barfoo" 和 "foobar" 。
+输出的顺序不重要, [9,0] 也是有效答案。
+```
+
+
+
+
 
 
 
