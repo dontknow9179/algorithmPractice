@@ -1324,9 +1324,411 @@ class Solution {
 输出的顺序不重要, [9,0] 也是有效答案。
 ```
 
+只要知道是用哈希表来做其实这道题就不难了，可惜我是看了题解才知道的
+
+首先拿一个哈希表存words数组，key是string，value是次数，利用哈希表就可以对不考虑顺序的集合进行比较，不用set是因为words数组里面可能有单词出现了不止一次
+
+接着遍历string，取出子串判断是否符合条件，我使用的策略是先判断一下这个子串的第一个单词是否符合要求，符合的话再取，然后就是为这个子串建立第二个哈希表，当第二个哈希表中某个单词出现的次数大于第一个哈希表时就break，还有当这个单词在第一个哈希表中不存在时break，就不需要其他条件了，像是次数不够的情况必然出现前两种之一。
+
+```java
+class Solution {
+    public List<Integer> findSubstring(String s, String[] words) {
+        Map<String, Integer> map1 = new HashMap<>();
+        for(int i = 0; i < words.length; i++){
+            map1.put(words[i], map1.getOrDefault(words[i], 0) + 1);
+        }
+        int len = words[0].length();
+        int totalLen = len * words.length;
+        List<Integer> res = new ArrayList<>();
+        for(int i = 0; i <= s.length() - totalLen; i++){
+            if(map1.containsKey(s.substring(i, i + len))){
+                String cur = s.substring(i, i + totalLen);
+                Map<String, Integer> map2 = new HashMap<>();
+                int j;
+                for(j = 0; j < totalLen; j = j + len){
+                    String curSub = cur.substring(j, j + len);
+                    if(map1.containsKey(curSub)){
+                        map2.put(curSub, map2.getOrDefault(curSub, 0) + 1);
+                        if(map1.get(curSub) < map2.get(curSub)) break;
+                    }
+                    else break;
+                }
+                if(j == totalLen) res.add(i);
+            }
+        }
+        return res;
+    }
+}
+```
 
 
 
+#### 31 下一个排列（数学推导）
+
+实现获取 下一个排列 的函数，算法需要将给定数字序列重新排列成字典序中下一个更大的排列（即，组合出下一个更大的整数）。
+
+如果不存在下一个更大的排列，则将数字重新排列成最小的排列（即升序排列）。
+
+必须 原地 修改，只允许使用额外常数空间。
+
+**示例 1：**
+
+```
+输入：nums = [1,2,3]
+输出：[1,3,2]
+```
+
+**示例 2：**
+
+```
+输入：nums = [3,2,1]
+输出：[1,2,3]
+```
+
+这道题也是看了题解才知道怎么做的
+
++ 要把数字变大相当于要把其中的一位数字变大
++ 这位数字应该要尽可能靠右
++ 这个数字变大的程度要尽可能小
++ 这个数字变大之后，它后面的数字组合应该尽可能小
+
+所以我们要找的是从右往左第一个小于右边的数的数字，将它和它右侧比它大的最小的数字交换位置，然后将它后面的数字从小到大排
+
+**注意** 这个被选中的数字的右侧其实是一个递减序列，交换过位置之后依然是递减序列（可以证明），所以排序只需要颠倒一下就行
+
+```java
+class Solution {
+    public void nextPermutation(int[] nums) {
+        int i = 0;
+        for(i = nums.length - 2; i >= 0; i--){
+            if(nums[i] < nums[i + 1]){
+                for(int j = nums.length - 1; j > i; j--){
+                    if(nums[j] > nums[i]){
+                        int tmp = nums[j];
+                        nums[j] = nums[i];
+                        nums[i] = tmp;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        int left = i + 1;
+        int right = nums.length - 1;
+        while(left < right){
+            int tmp = nums[left];
+            nums[left] = nums[right];
+            nums[right] = tmp;
+            left++;
+            right--;
+        }
+    }
+}
+```
+
+
+
+#### 32 最长有效括号（动态规划经典变体）
+
+给你一个只包含 '(' 和 ')' 的字符串，找出最长有效（格式正确且连续）括号子串的长度。
+
+示例 1：
+
+```
+输入：s = "(()"
+输出：2
+解释：最长有效括号子串是 "()"
+```
+
+示例 2：
+
+```
+输入：s = ")()())"
+输出：4
+解释：最长有效括号子串是 "()()"
+```
+
+示例 3：
+
+```
+输入：s = ""
+输出：0
+```
+
+首先需要想到动规。
+
+然后需要将dp[i]表示为以i结尾的字符串最长有效的长度
+
++ 如果i的位置是左括号，肯定无效，直接填0
++ 如果i的位置的右括号，看它左侧是什么。如果是左括号，正好凑成一对，则dp[i]=dp[i-2]+2。如果是右括号，需要跨过dp[i-1]找到i-dp[i-1]-1位置的字符，看是否是左括号，如果是的话就能配对，dp[i]=2+dp[i-1]+dp[i-dp[i-1]-2]
++ 需要考虑一些边界情况
++ 我的代码里dp[0]是填充的，和上面的式子会有点不一样
+
+```java
+class Solution {
+    public int longestValidParentheses(String s) {
+        int len = s.length();
+        int[] dp = new int[len + 1];
+        int max = 0;
+        for(int i = 0; i < len; i++){
+            if(s.charAt(i) == '('){
+                dp[i + 1] = 0;
+            }
+            else if(i > 0){
+                if(s.charAt(i - 1) == '('){
+                    dp[i + 1] = dp[i - 1] + 2;
+                }
+                if(s.charAt(i - 1) == ')' && i - dp[i] - 1 >= 0 && s.charAt(i - dp[i] - 1) == '('){
+                    dp[i + 1] = dp[i] + 2;
+                    if(i - dp[i] - 2 >= 0){
+                        dp[i + 1] += dp[i - dp[i] - 1];
+                    } 
+                }
+                max = Math.max(max, dp[i + 1]);
+            }
+        }
+        return max;
+    }
+}
+```
+
+
+
+#### 33 搜索旋转排序数组（二分查找经典变体）
+
+整数数组 nums 按升序排列，数组中的值 互不相同 。
+
+在传递给函数之前，nums 在预先未知的某个下标 k（0 <= k < nums.length）上进行了 旋转，使数组变为 [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]（下标 从 0 开始 计数）。例如， [0,1,2,4,5,6,7] 在下标 3 处经旋转后可能变为 [4,5,6,7,0,1,2] 。
+
+给你 旋转后 的数组 nums 和一个整数 target ，如果 nums 中存在这个目标值 target ，则返回它的下标，否则返回 -1 。
+
+示例 1：
+
+```
+输入：nums = [4,5,6,7,0,1,2], target = 0
+输出：4
+```
+
+示例 2：
+
+```
+输入：nums = [4,5,6,7,0,1,2], target = 3
+输出：-1
+```
+
+**注意**！！！
+
+一个很容易错的测试用例是
+
+```
+输入：nums = [3,1], target = 1
+输出：1
+```
+
+看了题解的思路写的，重点在于判断mid的左右两边哪一边是有序的，利用有序的那一边来判断target有没有在那部分，然后修改搜索范围
+
+```java
+class Solution {
+    public int search(int[] nums, int target) {
+        int left = 0, right = nums.length - 1;
+        while(left <= right){ 
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target) return mid;
+            // 左侧有序
+            if(nums[left] <= nums[mid]){ //注意这里要用小于等于，用来处理left = mid的情况
+                if(target >= nums[left] && target < nums[mid]){ //这里用小于mid而不是小于等于mid-1是为了避免数组越界
+                    right = mid - 1;
+                }
+                else{
+                    left = mid + 1;
+                }
+            }
+            // 右侧有序
+            else{
+                if(target > nums[mid] && target <= nums[right]){ //这里用大于mid而不是大于等于mid+1是为了避免数组越界
+                    left = mid + 1;
+                }
+                else{
+                    right = mid - 1;
+                }
+            }
+        }
+        return -1;
+    }
+}
+```
+
+这道题比较纠结的点是mid到底要算在左边还是右边，我想了很久感觉应该是都算
+
+
+
+#### 34 在排序数组中查找元素的第一个和最后一个位置（二分查找经典变体）
+
+给定一个按照升序排列的整数数组 nums，和一个目标值 target。找出给定目标值在数组中的开始位置和结束位置。
+
+如果数组中不存在目标值 target，返回 [-1, -1]。
+
+进阶：
+
+你可以设计并实现时间复杂度为 O(log n) 的算法解决此问题吗？
+
+
+示例 1：
+
+```
+输入：nums = [5,7,7,8,8,10], target = 8
+输出：[3,4]
+```
+
+示例 2：
+
+```
+输入：nums = [5,7,7,8,8,10], target = 6
+输出：[-1,-1]
+```
+
+示例 3：
+
+```
+输入：nums = [], target = 0
+输出：[-1,-1]
+```
+
+找第一个和最后一个相当于两道题，找第一个比较简单一点。另外需要注意数组越界的判断(对应找不到这个数的情况)
+
+主要的点就是当nums[mid] == target的时候，left或者right要怎么变，以及循环终止条件怎么定，还有怎么避免死循环，多举几个例子，比如：
+
+[8,8,8], target = 8
+
+```java
+class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        if(nums.length == 0) return new int[]{-1, -1};
+        int left = 0, right = nums.length - 1;
+        int resLeft = 0, resRight = 0;
+        while(left < right){
+            int mid = left + (right - left) / 2;
+            if(nums[mid] > target) right = mid - 1;
+            else if(nums[mid] < target) left = mid + 1;
+            else right = mid;
+        }
+        if(right >= 0 && right < nums.length && nums[right] == target) resLeft = right;
+        else resLeft = -1;
+        left = 0;
+        right = nums.length - 1;
+        while(left < right){
+            int mid = left + (right - left) / 2 + 1; // 这里是避免死循环的重点，和前一个做法有点不同，是为了让left能不断向右移动
+            if(nums[mid] > target) right = mid - 1;
+            else if(nums[mid] < target) left = mid + 1;
+            else {
+                left = mid;
+            }
+        }
+        if(left >= 0 && left < nums.length && nums[left] == target) resRight = left;
+        else resRight = -1;
+        return new int[]{resLeft, resRight};
+    }
+}
+```
+
+
+
+#### 35 搜索插入位置（二分查找本体）
+
+给定一个排序数组和一个目标值，在数组中找到目标值，并返回其索引。如果目标值不存在于数组中，返回它将会被按顺序插入的位置。
+
+请必须使用时间复杂度为 O(log n) 的算法。
+
+```java
+class Solution {
+    public int searchInsert(int[] nums, int target) {
+        int left = 0, right = nums.length - 1;
+        while(left <= right){
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target) return mid;
+            else if(nums[mid] < target) left = mid + 1;
+            else right = mid - 1;
+        }
+        return left;
+    }
+}
+```
+
+
+
+#### 36 有效的数独
+
+请你判断一个 9 x 9 的数独是否有效。只需要 根据以下规则 ，验证已经填入的数字是否有效即可。
+
++ 数字 1-9 在每一行只能出现一次。
++ 数字 1-9 在每一列只能出现一次。
++ 数字 1-9 在每一个以粗实线分隔的 3x3 宫内只能出现一次。（请参考示例图）
+
+
+注意：
+
++ 一个有效的数独（部分已被填充）不一定是可解的。
++ 只需要根据以上规则，验证已经填入的数字是否有效即可。
++ 空白格用 '.' 表示。
+
+思路其实很简单，一开始想的是用set，代码如下
+
+```java
+class Solution {
+    public boolean isValidSudoku(char[][] board) {
+        List<HashSet<Character>> setsColumn = new ArrayList<>(9);
+        List<HashSet<Character>> setsRow = new ArrayList<>(9);
+        List<HashSet<Character>> setsBlock = new ArrayList<>(9);
+        init(setsColumn);
+        init(setsRow);
+        init(setsBlock);
+        for(int i = 0; i < 9; i++){
+            for(int j = 0; j < 9; j++){
+                char curr = board[i][j];
+                if(curr != '.'){
+                    if(setsColumn.get(j).contains(curr)) return false;
+                    else setsColumn.get(j).add(curr);
+                    if(setsRow.get(i).contains(curr)) return false;
+                    else setsRow.get(i).add(curr);
+                    int blockNum = (i / 3) * 3 + (j / 3);
+                    if(setsBlock.get(blockNum).contains(curr)) return false;
+                    else setsBlock.get(blockNum).add(curr);
+                }
+            }
+        }
+        return true;
+    }
+    void init(List<HashSet<Character>> list){ // 记得初始化，不然会在get的时候报错out of bound
+        for(int i = 0; i < 9; i++){ // 注意！这里要用9，不能用list.size()，因为size还是0，这个Bug愣是找了半天
+            list.add(new HashSet<Character>());
+        }
+    }
+}
+```
+
+**set的速度有点慢，后来改用boolean数组**，参考了一下题解的写法，变快了很多（其实就差了1ms，但是打败了100%）
+
+```java
+class Solution {
+    public boolean isValidSudoku(char[][] board) {
+        boolean[][] columns = new boolean[9][9];
+        boolean[][] rows = new boolean[9][9];
+        boolean[][] blocks = new boolean[9][9];
+        for(int i = 0; i < 9; i++){
+            for(int j = 0; j < 9; j++){
+                char curr = board[i][j];
+                if(curr != '.'){
+                    int index = curr - '0' - 1;
+                    int blockNum = (i / 3) * 3 + (j / 3);
+                    if(columns[j][index] || rows[i][index] || blocks[blockNum][index]) return false;
+                    else columns[j][index] = rows[i][index] = blocks[blockNum][index] = true;
+                }
+            }
+        }
+        return true;
+    }
+}
+```
 
 
 
