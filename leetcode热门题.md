@@ -144,7 +144,167 @@ class Solution {
 
 做过很多遍居然还是忘记怎么做了，只知道用set来判断是否重复，看了题解才知道是用双指针来做。。。哎
 
-#### 4
+#### 4 寻找两个正序数组的中位数
+
+给定两个大小分别为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。请你找出并返回这两个正序数组的 中位数 。
+
+算法的时间复杂度应该为 O(log (m+n)) 。
+
+示例 1：
+
+```
+输入：nums1 = [1,3], nums2 = [2]
+输出：2.00000
+解释：合并数组 = [1,2,3] ，中位数 2
+```
+
+示例 2：
+
+```
+输入：nums1 = [1,2], nums2 = [3,4]
+输出：2.50000
+解释：合并数组 = [1,2,3,4] ，中位数 (2 + 3) / 2 = 2.5
+```
+
+示例 3：
+
+```
+输入：nums1 = [], nums2 = [1]
+输出：1.00000
+```
+
+最后用了最傻的做法，就是归并，意外的时间没有很多（打败100%）
+
+就是空间还是有点浪费，其实应该可以不用整一个新的数组来存的，但写起来有点麻烦
+
+```java
+class Solution {
+    public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        int len = nums1.length + nums2.length;
+        int pos1 = 0, pos2 = 0;
+        int i = 0;
+        int[] nums = new int[len / 2 + 1];
+        while(pos1 < nums1.length && pos2 < nums2.length && i < nums.length){
+            if(nums1[pos1] <= nums2[pos2]){
+                nums[i] = nums1[pos1];
+                pos1++;
+            }
+            else{
+                nums[i] = nums2[pos2];
+                pos2++;
+            }
+            i++;
+        }
+        while(i < nums.length && pos1 < nums1.length){
+            nums[i] = nums1[pos1];
+            pos1++;
+            i++;
+        }
+        while(i < nums.length && pos2 < nums2.length){
+            nums[i] = nums2[pos2];
+            pos2++;
+            i++;
+        }
+        return (nums[len / 2] + nums[(len - 1) / 2]) / 2.0; // 注意是2.0不是2
+        // 这种写法可以不用分奇数和偶数讨论
+    }
+}
+```
+
+在题解里找了一下不用开新数组的写法，如下：
+
+https://leetcode-cn.com/problems/median-of-two-sorted-arrays/solution/xiang-xi-tong-su-de-si-lu-fen-xi-duo-jie-fa-by-w-2/
+
+```java
+public double findMedianSortedArrays(int[] A, int[] B) {
+    int m = A.length;
+    int n = B.length;
+    int len = m + n;
+    int left = -1, right = -1;
+    int aStart = 0, bStart = 0;
+    for (int i = 0; i <= len / 2; i++) {
+        left = right;
+        // 这个的条件语句很妙，还用到了短路
+        if (aStart < m && (bStart >= n || A[aStart] < B[bStart])) {
+            right = A[aStart++];
+        } else {
+            right = B[bStart++];
+        }
+    }
+    if ((len & 1) == 0)
+        return (left + right) / 2.0;
+    else
+        return right;
+}
+```
+
+这个题解还提出了log(m+n)的解法，其实是求第k小的数的特殊解法
+
+如下：
+
+```java
+public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+    int n = nums1.length;
+    int m = nums2.length;
+    int left = (n + m + 1) / 2;
+    int right = (n + m + 2) / 2;
+    //将偶数和奇数的情况合并，如果是奇数，会求两次同样的 k 。
+    return (getKth(nums1, 0, n - 1, nums2, 0, m - 1, left) + getKth(nums1, 0, n - 1, nums2, 0, m - 1, right)) * 0.5;  
+}
+    
+    private int getKth(int[] nums1, int start1, int end1, int[] nums2, int start2, int end2, int k) {
+        int len1 = end1 - start1 + 1;
+        int len2 = end2 - start2 + 1;
+        //让 len1 的长度小于 len2，这样就能保证如果有数组空了，一定是 len1 
+        if (len1 > len2) return getKth(nums2, start2, end2, nums1, start1, end1, k);
+        if (len1 == 0) return nums2[start2 + k - 1];
+
+        if (k == 1) return Math.min(nums1[start1], nums2[start2]);
+
+        int i = start1 + Math.min(len1, k / 2) - 1;
+        int j = start2 + Math.min(len2, k / 2) - 1;
+
+        if (nums1[i] > nums2[j]) {
+            return getKth(nums1, start1, end1, nums2, j + 1, end2, k - (j - start2 + 1));
+        }
+        else {
+            return getKth(nums1, i + 1, end1, nums2, start2, end2, k - (i - start1 + 1));
+        }
+    }
+```
+
+另一个思路相似的[题解](https://mp.weixin.qq.com/s?__biz=MzU4NDE3MTEyMA==&mid=2247484130&idx=5&sn=de027e77fd0cc185bd5d753bab38f5d0&chksm=fd9ca9fdcaeb20eb2d70190b3240d69ebc61c0d463c55ceb83eff76a4f624adcac00740faca7&token=583813353&lang=zh_CN&scene=21#wechat_redirect)的写法如下，比前一种更简洁，不过前一种更好理解
+
+```java
+class Solution {
+    public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        int tot = nums1.length + nums2.length;
+        if (tot % 2 == 0) {
+            int left = find(nums1, 0, nums2, 0, tot / 2);
+            int right = find(nums1, 0, nums2, 0, tot / 2 + 1);
+            return (left + right) / 2.0;
+        } else {
+            return find(nums1, 0, nums2, 0, tot / 2 + 1);
+        }
+    }
+    int find(int[] n1, int i, int[] n2, int j, int k) {
+        if (n1.length - i > n2.length - j) return find(n2, j, n1, i, k);
+        if (i >= n1.length) return n2[j + k - 1];
+        if (k == 1) {
+            return Math.min(n1[i], n2[j]);
+        } else {
+            int si = Math.min(i + (k / 2), n1.length), sj = j + k - (k / 2);
+            if (n1[si - 1] > n2[sj - 1]) {
+                return find(n1, i, n2, sj, k - (sj - j));
+            } else {
+                return find(n1, si, n2, j, k - (si - i));
+            }
+        }
+    }
+}
+```
+
+
 
 #### 5 最长回文子串
 
@@ -403,7 +563,108 @@ class Solution {
 
 这种写法写错了好几次，易错点是以0结尾但不是0的数字，应该作为特殊情况处理
 
-#### 10
+
+
+#### 10 正则表达式匹配（二维DP）
+
+给你一个字符串 s 和一个字符规律 p，请你来实现一个支持 '.' 和 '*' 的正则表达式匹配。
+
+'.' 匹配任意单个字符
+'*' 匹配零个或多个前面的那一个元素
+所谓匹配，是要涵盖 整个 字符串 s的，而不是部分字符串。
+
+看了[官方题解](https://leetcode-cn.com/problems/regular-expression-matching/solution/zheng-ze-biao-da-shi-pi-pei-by-leetcode-solution/)做的，主要的思路：
+
+字母 + 星号的组合在匹配的过程中，本质上只会有两种情况：
+
+匹配 s 末尾的一个字符，将该字符扔掉，而该组合还可以继续进行匹配；
+
+不匹配字符，将该组合扔掉，不再进行匹配。
+
+我的代码如下：
+
+```java
+class Solution {
+    public boolean isMatch(String s, String p) {
+        s = "_" + s;
+        p = "_" + p;
+        int sLen = s.length();
+        int pLen = p.length();
+        boolean[][] dp = new boolean[pLen][sLen];
+        dp[0][0] = true;
+        for(int i = 1; i < pLen; i++){
+            for(int j = 0; j < sLen; j++){
+                if(match(s.charAt(j), p.charAt(i))){
+                    dp[i][j] = dp[i - 1][j - 1];
+                }
+                else if(p.charAt(i) == '*'){
+                    if(match(s.charAt(j), p.charAt(i - 1))){
+                        dp[i][j] = dp[i][j - 1] || dp[i - 2][j];
+                    }
+                    else{
+                        dp[i][j] = dp[i - 2][j];
+                    }
+                    
+                }
+                else{
+                    dp[i][j] = false;
+                }
+            }
+        }
+        return dp[pLen - 1][sLen - 1]; 
+    }
+    boolean match(char a, char b){
+        return a == b || (b == '.' && a != '_');
+    }
+}
+```
+
+写的时候还是磕磕绊绊的，主要是下标加一减一的问题，还有处理空字符串的问题
+
+我用的办法是在两个字符前都加了一个'_'用来表示空的状态，这样就可以不用处理加一减一的问题了，需要注意例如：a*这样的可以匹配空字符串，但是'.'不能匹配空字符串，所以在match函数里需要加一个判断
+
+题解的写法如下：
+
+```java
+class Solution {
+    public boolean isMatch(String s, String p) {
+        int m = s.length();
+        int n = p.length();
+
+        boolean[][] f = new boolean[m + 1][n + 1];
+        f[0][0] = true;
+        for (int i = 0; i <= m; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                if (p.charAt(j - 1) == '*') {
+                    f[i][j] = f[i][j - 2];
+                    if (matches(s, p, i, j - 1)) {
+                        f[i][j] = f[i][j] || f[i - 1][j];
+                    }
+                } else {
+                    if (matches(s, p, i, j)) {
+                        f[i][j] = f[i - 1][j - 1];
+                    }
+                }
+            }
+        }
+        return f[m][n];
+    }
+
+    public boolean matches(String s, String p, int i, int j) {
+        if (i == 0) {
+            return false;
+        }
+        if (p.charAt(j - 1) == '.') {
+            return true;
+        }
+        return s.charAt(i - 1) == p.charAt(j - 1);
+    }
+}
+```
+
+题解的做法则是把判断的部分放在了match函数里，其余部分就显得很好懂
+
+
 
 #### 11 盛最多水的容器（没想到是双指针）
 
@@ -1732,6 +1993,257 @@ class Solution {
 
 
 
+#### 37 解数独（回溯）
+
+算是前一题的升级版，区别是需要解出来，在原来的二维数组上修改，把答案填进去，用经典的回溯做就行，看了题解才发现思路不难
+
++ 用一个list来存放空着的位置，这里是按照先行再列的顺序遍历的
++ 用和前一题同样的三个数组存放行，列，块的数字出现情况，用于后续判断是否为有效数独
++ 回溯的时候，在递归调用前要记得将这三个数组的状态设为true，调用后设为false
+
+```java
+class Solution {
+    boolean[][] rows = new boolean[9][9];
+    boolean[][] columns = new boolean[9][9];
+    boolean[][] blocks = new boolean[9][9];
+    List<int[]> spaces = new ArrayList<>();
+    //这部分设置成类变量可以减少传参
+    
+    public void solveSudoku(char[][] board) {  
+        for(int i = 0; i < 9; i++){
+            for(int j = 0; j < 9; j++){
+                if(board[i][j] == '.'){
+                    int[] space = new int[]{i, j};
+                    spaces.add(space);
+                }
+                else{
+                    int index = board[i][j] - '0' - 1;
+                    int blockNum = (i / 3) * 3 + (j / 3);
+                    rows[i][index] = columns[j][index] = blocks[blockNum][index] = true;
+                }
+            }
+        }
+        solveSudoku(board, 0);
+    }
+    private boolean solveSudoku(char[][] board, int pos){
+        if(pos == spaces.size()) return true;
+        int[] space = spaces.get(pos);
+        int i = space[0];
+        int j = space[1];
+        int blockNum = (i / 3) * 3 + (j / 3);
+        for(int digit = 0; digit < 9; digit++){
+            if(!rows[i][digit] && !columns[j][digit] && !blocks[blockNum][digit]){
+                rows[i][digit] = columns[j][digit] = blocks[blockNum][digit] = true;
+                board[i][j] = (char)('0' + digit + 1);
+                if(solveSudoku(board, pos + 1)) return true;
+                board[i][j] = '.';
+                rows[i][digit] = columns[j][digit] = blocks[blockNum][digit] = false;
+            }
+        }
+        return false;
+    }
+}
+```
+
+
+
+#### 38 外观数列
+
+给定一个正整数 n ，输出外观数列的第 n 项。
+
+「外观数列」是一个整数序列，从数字 1 开始，序列中的每一项都是对前一项的描述。
+
+你可以将其视作是由递归公式定义的数字字符串序列：
+
+countAndSay(1) = "1"
+countAndSay(n) 是对 countAndSay(n-1) 的描述，然后转换成另一个数字字符串。
+前五项如下：
+
+```
+1.     1
+2.     11
+3.     21
+4.     1211
+5.     111221
+       第一项是数字 1 
+       描述前一项，这个数是 1 即 “ 一 个 1 ”，记作 "11"
+       描述前一项，这个数是 11 即 “ 二 个 1 ” ，记作 "21"
+       描述前一项，这个数是 21 即 “ 一 个 2 + 一 个 1 ” ，记作 "1211"
+       描述前一项，这个数是 1211 即 “ 一 个 1 + 一 个 2 + 二 个 1 ” ，记作 "111221"
+```
+
+简单的递归，没什么稀奇的，注意一下状态变化的点，以及最后循环结束后的处理
+
+```java
+class Solution {
+    public String countAndSay(int n) {
+        if(n == 1) return "1";
+        String pre = countAndSay(n - 1);
+        StringBuilder res = new StringBuilder();
+        int count = 1;
+        char cur = pre.charAt(0);
+        for(int i = 1; i < pre.length(); i++){
+            if(pre.charAt(i) == pre.charAt(i - 1)){
+                count++;
+            }
+            else{
+                res.append(String.valueOf(count));
+                res.append(cur);
+                cur = pre.charAt(i);
+                count = 1;
+            }
+        }
+        res.append(String.valueOf(count));
+        res.append(cur);
+        return res.toString();
+    }
+}
+```
+
+
+
+#### 39 组合总和（又是回溯，注意copy）
+
+给你一个 无重复元素 的整数数组 candidates 和一个目标整数 target ，找出 candidates 中可以使数字和为目标数 target 的 所有不同组合 ，并以列表形式返回。你可以按 任意顺序 返回这些组合。
+
+candidates 中的 同一个 数字可以 无限制重复被选取 。如果至少一个数字的被选数量不同，则两种组合是不同的。 
+
+对于给定的输入，保证和为 target 的不同组合数少于 150 个。
+
+示例 1：
+
+```
+输入：candidates = [2,3,6,7], target = 7
+输出：[[2,2,3],[7]]
+```
+
+示例 2：
+
+```
+输入: candidates = [2,3,5], target = 8
+输出: [[2,2,2,2],[2,3,3],[3,5]]
+```
+
+示例 3：
+
+```
+输入: candidates = [2], target = 1
+输出: []
+```
+
+示例 4：
+
+```
+输入: candidates = [1], target = 1
+输出: [[1]]
+```
+
+示例 5：
+
+```
+输入: candidates = [1], target = 2
+输出: [[1,1]]
+```
+
+这道题比较需要注意的是
+
++ 组合不能重复。我采用的策略是从左往右选择元素，不能往回找，比如[2,3,5]当我把3放进去的时候，后面的选择就只能选3或者5，不能选2了
++ 注意list的copy
+
+```java
+class Solution {
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        dfs(candidates, 0, target, res, list);
+        return res;
+    }
+    void dfs(int[] candidates, int pos, int target, List<List<Integer>> res, List<Integer> list){
+        if(target == 0){    
+            res.add(new ArrayList<>(list));//注意需要拷贝
+            return;
+        }
+        for(int i = pos; i < candidates.length; i++){
+            if(candidates[i] <= target){
+                list.add(candidates[i]);
+                dfs(candidates, i, target - candidates[i], res, list);
+                list.remove(list.size() - 1);
+            }
+        }
+        return;
+    }
+}
+```
+
+
+
+#### 40 组合总和二（比上一题难了不少）
+
+给定一个数组 candidates 和一个目标数 target ，找出 candidates 中所有可以使数字和为 target 的组合。
+
+candidates 中的每个数字在每个组合中只能使用一次。
+
+注意：解集不能包含重复的组合。 
+
+示例 1:
+
+```
+输入: candidates = [10,1,2,7,6,1,5], target = 8,
+输出:
+[
+[1,1,6],
+[1,2,5],
+[1,7],
+[2,6]
+]
+```
+
+大部分代码可以用上一题的，比较难的点是要保证解里面的组合不重复，试过了用set来去重，会超出时间限制，所以得靠自己制定规则
+
+我用的方法是
+
++ 先把备选数组排序
++ 构造一个list用来存放已经选择了哪些位置（后来改成用一个boolean数组来存visited状态，速度提升了不少）
++ 在选择数字之前先判断它和前一个位置的数字是否相等，如果相等且前一个数字没有被visited，那这个数字也不要选（这里有点难懂，建议举个例子看看）
++ 举例[1,1,1,1,1] target=3
+
+```java
+class Solution {
+    public List<List<Integer>> combinationSum2(int[] candidates, int target) {
+        Arrays.sort(candidates);
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        boolean[] visited = new boolean[candidates.length];
+        dfs(candidates, 0, target, res, list, visited);
+        return res;
+    }
+    void dfs(int[] candidates, int pos, int target, List<List<Integer>> res, List<Integer> list, boolean[] visited){
+        if(target == 0){    
+            res.add(new ArrayList<>(list));
+            return;
+        }
+        
+        for(int i = pos; i < candidates.length; i++){
+            while(i > 0 && candidates[i] == candidates[i - 1] && !visited[i - 1]) {
+                i++;
+                if(i >= candidates.length) break;
+            }
+            if(i >= candidates.length) break;
+            if(candidates[i] <= target){
+                list.add(candidates[i]);
+                visited[i] = true;
+                dfs(candidates, i + 1, target - candidates[i], res, list, visited);
+                list.remove(list.size() - 1);
+                visited[i] = false;
+            }
+        }
+        return;
+    }
+}
+```
+
+
+
 #### 41 缺失的第一个正数（Hard, 桶排序, 因为swap找了半天bug）
 
 给你一个未排序的整数数组 nums ，请你找出其中没有出现的最小的正整数。 
@@ -1742,7 +2254,7 @@ class Solution {
 
 第一种是先排序，然后查找1到n的数哪一个不在数组中。思路简单，复杂度为nlogn，由于n<=300，log300<10可以视为常数
 
-第二种是桶排序（看不太懂为啥叫做桶排序，感觉不太像）
+第二种是桶排序，把每个数放在它应该出现的位置上（看不太懂为啥叫做桶排序，感觉不太像）
 
 最气的是在交换数组中两个位置的值的时候，第一种和第三种做法可以，第二种不行，看了很久很久才被提醒说是nums[i]在被赋值之后就不能再拿来用了
 
@@ -1786,6 +2298,526 @@ class Solution {
 
 
 
+#### 42 接雨水（超级经典题，多解法）
+
+https://leetcode-cn.com/problems/trapping-rain-water/solution/jie-yu-shui-by-leetcode/
+
+这个官方题解就很不错
+
+参考题解写的单调栈的代码如下：
+
+```java
+class Solution {
+    public int trap(int[] height) {
+        if(height.length == 0) return 0;
+        Stack<Integer> stack = new Stack<>();
+        stack.push(0);
+        int res = 0;
+        for(int i = 1; i < height.length; i++){
+            while(!stack.isEmpty() && height[i] > height[stack.peek()]){
+                int top = stack.pop();
+                if(stack.isEmpty()) break;
+                int distance = i - stack.peek() - 1;
+                int high = Math.min(height[i], height[stack.peek()]) - height[top];
+                res += high * distance;
+            }
+            stack.push(i);
+        }
+        return res;
+    }
+}
+```
+
+另一种做法，题解说DP但我感觉只是记忆化，代码如下。不过这个写法更简单，推荐用这个，缺点是可能不太适用其他题吧
+
+```java
+class Solution {
+    public int trap(int[] height) {
+        int len = height.length;
+        if(len == 0) return 0;
+        int res = 0;
+        int[] leftmax = new int[len];
+        int[] rightmax = new int[len];
+        int left = 0, right = 0;
+        for(int i = 0; i < len; i++){
+            left = Math.max(left, height[i]);
+            leftmax[i] = left;
+        }
+        for(int i = len - 1; i >= 0; i--){
+            right = Math.max(right, height[i]);
+            rightmax[i] = right;
+        }
+        for(int i = 0; i < len; i++){
+            res += Math.min(leftmax[i], rightmax[i]) - height[i];
+        }
+        return res;
+    }
+}
+```
+
+最后还有一种是双指针，使用一次遍历完成，没太绕明白
+
+
+
+#### 43 字符串相乘（模拟加法和乘法）
+
+给定两个以字符串形式表示的非负整数 num1 和 num2，返回 num1 和 num2 的乘积，它们的乘积也表示为字符串形式。
+
+示例 1:
+
+```
+输入: num1 = "2", num2 = "3"
+输出: "6"
+```
+
+示例 2:
+
+```
+输入: num1 = "123", num2 = "456"
+输出: "56088"
+```
+
+说明：
+
+```
+num1 和 num2 的长度小于110。
+num1 和 num2 只包含数字 0-9。
+num1 和 num2 均不以零开头，除非是数字 0 本身。
+不能使用任何标准库的大数类型（比如 BigInteger）或直接将输入转换为整数来处理
+```
+
+这道题涉及了加法和乘法，乘法是循环乘数的每一位去乘以被乘数
+
+```java
+class Solution {
+    public String multiply(String num1, String num2) {
+        if(num1.equals("0") || num2.equals("0")) return "0"; // 记得判断0的情况
+        int len1 = num1.length();
+        int len2 = num2.length();
+        StringBuilder res = new StringBuilder();
+        for(int i = len2 - 1; i >= 0; i--){
+            StringBuilder cur = new StringBuilder();
+            // 这里补零，很重要
+            for(int k = len2 - 1; k > i; k--){
+                cur.append('0');
+            }
+            int add = 0;
+            int digit2 = num2.charAt(i) - '0';
+            for(int j = len1 - 1; j >= 0; j--){
+                int digit1 = num1.charAt(j) - '0';
+                int multiply = digit1 * digit2 + add;
+                add = multiply / 10;
+                cur.append((char)(multiply % 10 + '0'));
+            }
+            if(add > 0) cur.append((char)(add % 10 + '0'));
+            res = add(res.toString(), cur.reverse().toString());
+        }
+        return res.toString();
+
+    }
+    StringBuilder add(String num1, String num2){
+        StringBuilder res = new StringBuilder();
+        int i = num1.length() - 1;
+        int j = num2.length() - 1;
+        int add = 0;
+        while(i >= 0 || j >= 0 || add != 0){ // 这么写可以避免分类讨论
+            int digit1 = (i >= 0) ? (num1.charAt(i) - '0') : 0;
+            int digit2 = (j >= 0) ? (num2.charAt(j) - '0') : 0;
+            int sum = digit1 + digit2 + add;
+            add = sum / 10;
+            res.append((char)(sum % 10 + '0'));
+            i--;
+            j--;
+        }
+        return res.reverse();
+    }
+}
+```
+
+这个做法的耗时比较多，主要集中在字符串相加的过程，看了[题解](https://leetcode-cn.com/problems/multiply-strings/solution/you-hua-ban-shu-shi-da-bai-994-by-breezean/)的另一种做法，用一个int数组来存放计算的每一位结果，需要用到几个规律（**重点**）
+
++ m位数乘以n位数的结果位数是m+n或者m+n-1
++ num1[i] * num2[j] 的结果最多两位，第一位在res[i + j]，第二位在res[i + j + 1]
+
+```java
+class Solution {
+    public String multiply(String num1, String num2) {
+        if (num1.equals("0") || num2.equals("0")) {
+            return "0";
+        }
+        int[] res = new int[num1.length() + num2.length()];
+        for (int i = num1.length() - 1; i >= 0; i--) {
+            int n1 = num1.charAt(i) - '0';
+            for (int j = num2.length() - 1; j >= 0; j--) {
+                int n2 = num2.charAt(j) - '0';
+                int sum = (res[i + j + 1] + n1 * n2); // res[i+j+1]上可能有之前的进位
+                res[i + j + 1] = sum % 10;
+                res[i + j] += sum / 10;// 更新进位，注意这里是+=，不是=
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < res.length; i++) {
+            if (i == 0 && res[i] == 0) continue;
+            result.append(res[i]);// 查了语法，可以这么写，也可以(char)(res[i] + '0')
+        }
+        return result.toString();
+    }
+}
+```
+
+上面这种做法巧妙地避免了再进行字符串加法的工作，代码也短了很多，速度快了不少。这么一想第一种做法也可以稍微改下比如用List\<Integer>来存每次的结果
+
+
+
+#### 44 通配符匹配（比第10题略简单）
+
+给定一个字符串 (s) 和一个字符模式 (p) ，实现一个支持 '?' 和 '*' 的通配符匹配。
+
+'?' 可以匹配任何单个字符。
+'*' 可以匹配任意字符串（包括空字符串）。
+两个字符串完全匹配才算匹配成功。
+
+说明:
+
+s 可能为空，且只包含从 a-z 的小写字母。
+p 可能为空，且只包含从 a-z 的小写字母，以及字符 ? 和 *。
+
+只要会了第10题，这道题就很好做了
+
+```java
+class Solution {
+    public boolean isMatch(String s, String p) {
+        s = '_' + s;
+        p = '_' + p;
+        int sLen = s.length();
+        int pLen = p.length();
+        boolean[][] dp = new boolean[pLen][sLen];
+        dp[0][0] = true;
+        for(int i = 1; i < pLen; i++){
+            for(int j = 0; j < sLen; j++){
+                if(p.charAt(i) == '*'){
+                    if(j > 0){
+                        dp[i][j] = dp[i - 1][j] || dp[i][j - 1];
+                    }
+                    else{
+                        dp[i][j] = dp[i - 1][j];
+                    }    
+                }
+                else if(match(s.charAt(j), p.charAt(i))){
+                    dp[i][j] = dp[i - 1][j - 1];
+                }
+            }
+        }
+        return dp[pLen - 1][sLen - 1];
+    }
+    boolean match(char a, char b){
+        return a == b || (b == '?' && a != '_') || (b == '*');
+    }
+}
+```
+
+
+
+#### 45 跳跃游戏二（有点难的贪心）
+
+给你一个非负整数数组 nums ，你最初位于数组的第一个位置。
+
+数组中的每个元素代表你在该位置可以跳跃的最大长度。
+
+你的目标是使用最少的跳跃次数到达数组的最后一个位置。
+
+假设你总是可以到达数组的最后一个位置。 
+
+示例 1:
+
+```
+输入: nums = [2,3,1,1,4]
+输出: 2
+解释: 跳到最后一个位置的最小跳跃数是 2。
+     从下标为 0 跳到下标为 1 的位置，跳 1 步，然后跳 3 步到达数组的最后一个位置。
+```
+
+我一开始用的是傻傻的两重循环DP
+
+```java
+class Solution {
+    public int jump(int[] nums) {
+        int[] dp = new int[nums.length];
+        for(int i = 1; i < nums.length; i++){
+            dp[i] = 10000;
+            for(int j = 0; j < i; j++){
+                if(nums[j] + j >= i){
+                    dp[i] = Math.min(dp[i], dp[j] + 1);
+                }
+            }
+        }
+        return dp[nums.length - 1];
+    }
+}
+```
+
+时间特别久
+
+后来看了题解的贪心，只需要一重循环。遍历数组，求出每次能到达的最远的位置（变量max）
+
+维护当前能够到达的最大下标位置，记为边界（变量end）。我们从左到右遍历数组，到达边界时，更新边界并将跳跃次数增加 1。
+
+> 在遍历数组时，我们不访问最后一个元素，这是因为在访问最后一个元素之前，我们的边界一定大于等于最后一个位置，否则就无法跳到最后一个位置了。如果访问最后一个元素，在边界正好为最后一个位置的情况下，我们会增加一次「不必要的跳跃次数」，因此我们不必访问最后一个元素。
+> 链接：https://leetcode-cn.com/problems/jump-game-ii/solution/tiao-yue-you-xi-ii-by-leetcode-solution/
+
+```java
+class Solution {
+    public int jump(int[] nums) {
+        int len = nums.length;
+        int max = 0;
+        int end = 0;
+        int step = 0;
+        int[] dp = new int[len];
+        for(int i = 0; i < len - 1; i++){
+            max = Math.max(max, nums[i] + i);
+            if(i == end){
+                end = max;
+                step++;
+            }
+        }
+        return step;
+    }
+}
+```
+
+
+
+#### 46 全排列（老回溯题了）
+
+给定一个不含重复数字的数组 nums ，返回其 所有可能的全排列 。你可以 按任意顺序 返回答案。
+
+示例 1：
+
+```
+输入：nums = [1,2,3]
+输出：[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+```
+
+示例 2：
+
+```
+输入：nums = [0,1]
+输出：[[0,1],[1,0]]
+```
+
+示例 3：
+
+```
+输入：nums = [1]
+输出：[[1]]
+```
+
+
+提示：
+
++ 1 <= nums.length <= 6
++ -10 <= nums[i] <= 10
++ nums 中的所有整数 互不相同
+
+```java
+class Solution {
+    public List<List<Integer>> permute(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        boolean[] visited = new boolean[nums.length];
+        dfs(res, list, visited, nums);
+        return res;
+    }
+    void dfs(List<List<Integer>> res, List<Integer> list, boolean[] visited, int[] nums){
+        if(list.size() == nums.length){
+            res.add(new ArrayList<>(list));
+            return;
+        }
+        for(int i = 0; i < nums.length; i++){
+            if(!visited[i]){
+                visited[i] = true;
+                list.add(nums[i]);
+                dfs(res, list, visited, nums);
+                list.remove(list.size() - 1);
+                visited[i] = false;
+            }
+        }
+    }
+}
+```
+
+
+
+#### 47 全排列二（类似第39题）
+
+给定一个可包含重复数字的序列 `nums` ，**按任意顺序** 返回所有不重复的全排列。
+
+和全排列一不同在数组中包含重复的数字
+
+**示例 1：**
+
+```
+输入：nums = [1,1,2]
+输出：
+[[1,1,2],
+ [1,2,1],
+ [2,1,1]]
+```
+
++ 要记得先给数组排序！
+
+```java
+class Solution {
+    public List<List<Integer>> permuteUnique(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        boolean[] visited = new boolean[nums.length];
+        Arrays.sort(nums);// 注意！
+        dfs(res, list, visited, nums);
+        return res;
+    }
+    void dfs(List<List<Integer>> res, List<Integer> list, boolean[] visited, int[] nums){
+        if(list.size() == nums.length){
+            res.add(new ArrayList<>(list));
+            return;
+        }
+        for(int i = 0; i < nums.length; i++){
+            if(!visited[i]){
+                if(i > 0 && nums[i] == nums[i - 1] && !visited[i - 1]) continue;
+                visited[i] = true;
+                list.add(nums[i]);
+                dfs(res, list, visited, nums);
+                list.remove(list.size() - 1);
+                visited[i] = false;
+            }
+        }
+    }
+}
+```
+
+用来保证list不重复的方法是：如果一个数字和前一个的值相同，就优先选前面的，也就是说，如果前面的数字visited为false，且值和当前的数字相同，那就不要选当前的数字
+
+
+
+#### 51 N皇后
+
+n 皇后问题 研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并且使皇后彼此之间不能相互攻击。
+
+给你一个整数 n ，返回所有不同的 n 皇后问题 的解决方案。
+
+每一种解法包含一个不同的 n 皇后问题 的棋子放置方案，该方案中 'Q' 和 '.' 分别代表了皇后和空位。
+
+```
+输入：n = 4
+输出：[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]
+解释：如上图所示，4 皇后问题存在两个不同的解法。
+```
+
+这道题的回溯部分其实不难，对我来说比较难的是生成这个棋盘对应的List\<List\<String>>
+
+看了题解的做法，是用一个int[]先记录每一行选的是哪一列，然后再用一个函数把这个数组转为List\<List\<String>>
+
+题解还用了set来判断是否能放，我用的是boolean数组，比用set快了不少
+
++ 对角线的规律需要稍微找一下（一个是行加列，一个是行减列）
+
+```java
+class Solution {
+    public List<List<String>> solveNQueens(int n) {
+        List<List<String>> res = new ArrayList<>();
+        int[] queens = new int[n];
+        boolean[] columns = new boolean[n];
+        boolean[] diagonals1 = new boolean[2 * n - 1];
+        boolean[] diagonals2 = new boolean[2 * n - 1];
+        dfs(res, queens, n, 0, columns, diagonals1, diagonals2);
+        return res;
+    }
+
+    public void dfs(List<List<String>> res, int[] queens, int n, int row, boolean[] columns, boolean[] diagonals1, boolean[] diagonals2) {
+        if (row == n) {
+            List<String> board = generateBoard(queens, n);
+            res.add(board);
+            return;
+        } 
+        for (int i = 0; i < n; i++) {
+            if(columns[i]) continue;
+            int diagonal1 = row - i + n - 1;
+            if (diagonals1[diagonal1]) continue;
+            int diagonal2 = row + i;
+            if (diagonals2[diagonal2]) continue;
+            queens[row] = i;
+            columns[i] = true;
+            diagonals1[diagonal1] = true;
+            diagonals2[diagonal2] = true;
+            dfs(res, queens, n, row + 1, columns, diagonals1, diagonals2);
+            // queens[row] = 0; 这个可写可不写
+            columns[i] = false;
+            diagonals1[diagonal1] = false;
+            diagonals2[diagonal2] = false;
+        }
+        return;
+    }
+
+    public List<String> generateBoard(int[] queens, int n) {
+        List<String> board = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            char[] row = new char[n];
+            Arrays.fill(row, '.'); // 注意语法！
+            row[queens[i]] = 'Q';
+            board.add(new String(row));// 注意语法！
+        }
+        return board;
+    }
+}
+```
+
+
+
+#### 52 N皇后二
+
+给你一个整数 `n` ，返回 **n 皇后问题** 不同的解决方案的数量。
+
+```java
+class Solution {
+    int res = 0; // 注意！res如果作为参数的话是传值不是传引用，所以把它作为类变量了
+    public int totalNQueens(int n) {
+        boolean[] columns = new boolean[n];
+        boolean[] diagonals1 = new boolean[2 * n - 1];
+        boolean[] diagonals2 = new boolean[2 * n - 1];
+        dfs(n, 0, columns, diagonals1, diagonals2);
+        return res;
+    }
+
+    public void dfs(int n, int row, boolean[] columns, boolean[] diagonals1, boolean[] diagonals2) {
+        if (row == n) {
+            res++;
+            return;
+        } 
+        for (int i = 0; i < n; i++) {
+            if(columns[i]) continue;
+            int diagonal1 = row - i + n - 1;
+            if (diagonals1[diagonal1]) continue;
+            int diagonal2 = row + i;
+            if (diagonals2[diagonal2]) continue;
+            
+            columns[i] = true;
+            diagonals1[diagonal1] = true;
+            diagonals2[diagonal2] = true;
+
+            dfs(n, row + 1, columns, diagonals1, diagonals2);
+            
+            columns[i] = false;
+            diagonals1[diagonal1] = false;
+            diagonals2[diagonal2] = false;
+        }
+        return;
+    }
+}
+```
+
+
+
 #### 53 最大连续子序列和（DP）
 
 输入一个整型数组，数组中的一个或连续多个整数组成一个子数组。求所有子数组的和的最大值。
@@ -1818,6 +2850,45 @@ class Solution {
     }
 }
 ```
+
+
+
+#### 55 跳跃游戏（和45题类似）
+
+给定一个非负整数数组 `nums` ，你最初位于数组的 **第一个下标** 。
+
+数组中的每个元素代表你在该位置可以跳跃的最大长度。
+
+判断你是否能够到达最后一个下标。
+
+示例 1：
+
+```
+输入：nums = [3,2,1,0,4]
+输出：false
+解释：无论怎样，总会到达下标为 3 的位置。但该下标的最大跳跃长度是 0 ， 所以永远不可能到达最后一个下标。
+```
+
+
+提示：
+
++ 1 <= nums.length <= 3 * 104
++ 0 <= nums[i] <= 105
+
+```java
+class Solution {
+    public boolean canJump(int[] nums) {
+        int end = 0;
+        for(int i = 0; i <= end; i++){
+            end = Math.max(end, nums[i] + i);
+            if(end >= nums.length - 1) return true;
+        }
+        return false;
+    }
+}
+```
+
+和45题的区别是不需要用step变量来记忆走了几步，还是需要end来存当前是不是可以出发的位置，这个很重要，我们必须在可以走的范围内前进，同时更新可以走的范围，直到这个范围涵盖了终点
 
 
 
