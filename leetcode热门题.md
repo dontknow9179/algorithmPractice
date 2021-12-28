@@ -2,7 +2,7 @@
 
 #### 1 两数之和（利用哈希表加速）
 
-给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出 **和为目标值** *`target`* 的那 **两个** 整数，并返回它们的数组下标。
+给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出 **和为目标值** `target` 的那 **两个** 整数，并返回它们的数组下标。
 
 ```java
 class Solution {
@@ -119,6 +119,8 @@ class Solution {
 
 #### 3 无重复字符的最长子串（经典，双指针）
 
+给定一个字符串 `s` ，请你找出其中不含有重复字符的 **最长子串** 的长度。
+
 ```java
 class Solution {
     public int lengthOfLongestSubstring(String s) {
@@ -143,6 +145,8 @@ class Solution {
 ```
 
 做过很多遍居然还是忘记怎么做了，只知道用set来判断是否重复，看了题解才知道是用双指针来做。。。哎
+
+
 
 #### 4 寻找两个正序数组的中位数
 
@@ -1186,6 +1190,7 @@ class Solution {
                 stack.push(tmp);
             }
             if(tmp < 0){
+                // 注意判空
                 if(stack.isEmpty() || stack.peek() + tmp != 0) return false;
                 else stack.pop();                
             }
@@ -1997,7 +2002,7 @@ class Solution {
 
 算是前一题的升级版，区别是需要解出来，在原来的二维数组上修改，把答案填进去，用经典的回溯做就行，看了题解才发现思路不难
 
-+ 用一个list来存放空着的位置，这里是按照先行再列的顺序遍历的
++ **用一个list来存放空着的位置**，这里是按照先行再列的顺序遍历的
 + 用和前一题同样的三个数组存放行，列，块的数字出现情况，用于后续判断是否为有效数独
 + 回溯的时候，在递归调用前要记得将这三个数组的状态设为true，调用后设为false
 
@@ -2700,6 +2705,39 @@ class Solution {
 
 
 
+#### 48 旋转图像（有点巧妙的找规律）
+
+给定一个 n × n 的二维矩阵 matrix 表示一个图像。请你将图像顺时针旋转 90 度。
+
+你必须在 原地 旋转图像，这意味着你需要直接修改输入的二维矩阵。请不要 使用另一个矩阵来旋转图像。
+
+看了题解做出来的，首先需要转一圈涉及的四个位置：matrix\[i][j], matrix\[len - 1 - j][i], matrix\[len - i - 1][len - j - 1], matrix\[j][len - 1 - i]，在这四个位置之间进行值的交换，（这个还是比较好想到的）
+
+还有一个比较重要的点是，因为每次修改4个位置，所以把矩阵分割成4块，只需要枚举一块上[i, j]的就行，如果n为奇数，就把最中心的那个空出来
+
+具体的看题解吧
+
+我的代码如下：
+
+```java
+class Solution {
+    public void rotate(int[][] matrix) {
+        int len = matrix.length;
+        for(int i = 0; i < len / 2; i++){ // 什么都不做就是向下取整
+            for(int j = 0; j < (len + 1) / 2; j++){ // 加上1，向上取整
+                int tmp = matrix[i][j];
+                matrix[i][j] = matrix[len - 1 - j][i];
+                matrix[len - 1 - j][i] = matrix[len - i - 1][len - j - 1];
+                matrix[len - i - 1][len - j - 1] = matrix[j][len - 1 - i];
+                matrix[j][len - 1 - i] = tmp;
+            }
+        }
+    }
+}
+```
+
+
+
 #### 51 N皇后
 
 n 皇后问题 研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并且使皇后彼此之间不能相互攻击。
@@ -2959,6 +2997,470 @@ class Solution {
 
 
 
+#### 91 解码方法（一维DP，递推，不能使用深搜）
+
+一条包含字母 A-Z 的消息通过以下映射进行了 编码 ：
+
+```
+'A' -> 1
+'B' -> 2
+...
+'Z' -> 26
+```
+
+要 解码 已编码的消息，所有数字必须基于上述映射的方法，反向映射回字母（可能有多种方法）。例如，"11106" 可以映射为：
+
++ "AAJF" ，将消息分组为 (1 1 10 6)
++ "KJF" ，将消息分组为 (11 10 6)
+
+注意，消息不能分组为  (1 11 06) ，因为 "06" 不能映射为 "F" ，这是由于 "6" 和 "06" 在映射中并不等价。
+
+给你一个只含数字的 非空 字符串 s ，请计算并返回 解码 方法的 总数 。
+
+**注意**：这道题不能用dfs的写法
+
+一开始自然地想的是dfs的写法，结果超时了，仔细想想，我的dfs会有重复计算的情况
+
+其实表面上的区别就是向前算（递推）和向后算（递归），但是实际上递推才能避免重复计算，并且利用到前面的结果
+
+dp[i]表示的是到第i个字符有几种解码方法
+
+**注意**当没有字符时应该算1种解码方法，dp[0] = 1
+
+```java
+class Solution {
+    public int numDecodings(String s) {
+        if(s.charAt(0) == '0') return 0;
+        int[] dp = new int[s.length() + 1];
+        dp[0] = 1;
+        dp[1] = 1;
+        for(int i = 1; i < s.length(); i++){
+            if(s.charAt(i) != '0'){
+                dp[i + 1] += dp[i];
+            }
+            if(s.charAt(i - 1) != '0' && 10 * (s.charAt(i - 1) - '0') + (s.charAt(i) - '0') < 27 ){
+                dp[i + 1] += dp[i - 1];
+            }
+        }
+        return dp[s.length()];
+    }
+}
+```
+
+把dp数组优化成3个变量，代码如下：
+
+```java
+class Solution {
+    public int numDecodings(String s) {
+        if(s.charAt(0) == '0') return 0;
+        int first = 1, second = 1, third = 0;
+        for(int i = 1; i < s.length(); i++){
+            if(s.charAt(i) != '0') third += second;
+            if(s.charAt(i - 1) != '0' && 10 * (s.charAt(i - 1) - '0') + (s.charAt(i) - '0') < 27 ){
+                third += first;
+            }
+            first = second;
+            second = third;
+            third = 0;
+        }
+        return second;
+    }
+}
+```
+
+
+
+#### 98 验证二叉搜索树
+
+给你一个二叉树的根节点 `root` ，判断其是否是一个有效的二叉搜索树。
+
+**提示：**
+
+- 树中节点数目范围在`[1, 104]` 内
+- `-231 <= Node.val <= 231 - 1`
+
+**法一**：中序遍历判断是不是单调增
+
+代码模式类似中序遍历，只是遍历到之后不是输出来，是和前一个遍历到的比较，然后把当前的记为前一个，再接着遍历，而且返回值是以当前结点为根的树是不是二叉搜索树
+
+```java
+class Solution {
+    long pre = Long.MIN_VALUE;
+    public boolean isValidBST(TreeNode root) {
+        if(root == null) return true;
+        if(!isValidBST(root.left)) return false;
+        if(root.val <= pre) return false;
+        pre = root.val;
+        return isValidBST(root.right);
+    }
+}
+```
+
+**法二**：范围比较
+
+看的题解的做法，简单地说就是给每个结点为根的树都设置一个范围
+
+```java
+class Solution {
+    public boolean isValidBST(TreeNode root){
+        return isValidBST(root, Long.MIN_VALUE, Long.MAX_VALUE);
+    }
+    boolean isValidBST(TreeNode root, long low, long high){
+        if(root == null) return true;
+        if(root.val <= low || root.val >= high) return false;
+        if(!isValidBST(root.left, low, root.val)) return false;
+        return isValidBST(root.right, root.val, high);
+    }
+}
+```
+
+
+
+#### 103 二叉树的锯齿形层次遍历
+
+给定一个二叉树，返回其节点值的锯齿形层序遍历。（即先从左往右，再从右往左进行下一层遍历，以此类推，层与层之间交替进行）。
+
+一开始想了好一会儿，后来突然反应过来只是把原本的做法加一个`Collections.reverse(list);`
+
+层次遍历也不是无脑写出来的，需要注意
+
++ 如果是分层输出的话，需要在里层循环开始前拿到队列的size，这就是这一次层需要输出的个数
+
+```java
+class Solution {
+    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {
+        boolean flag = true;
+        List<List<Integer>> res = new ArrayList<>();
+        if(root == null) return res;
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        while(!queue.isEmpty()){
+            int cnt = queue.size();
+            List<Integer> list = new ArrayList<>();
+            while(cnt > 0){ // 这里很重要！需要两重循环
+                TreeNode cur = queue.poll();
+                if(cur.left != null) queue.add(cur.left);
+                if(cur.right != null) queue.add(cur.right);
+                list.add(cur.val);
+                cnt--;
+            }
+            if(!flag) Collections.reverse(list);
+            res.add(list);
+            flag = !flag;
+        }
+        return res;
+    }
+}
+```
+
+
+
+#### 124 二叉树中的最大路径和（类似最大连续子序列和）
+
+路径 被定义为一条从树中任意节点出发，沿父节点-子节点连接，达到任意节点的序列。同一个节点在一条路径序列中 至多出现一次 。该路径 至少包含一个 节点，且不一定经过根节点。
+
+路径和 是路径中各节点值的总和。
+
+给你一个二叉树的根节点 root ，返回其 最大路径和 。
+
+看了题解才做出来的。像这种返回值和全局变量分别代表不同含义的很容易搞得思路混乱。
+
+递归函数的返回值表示当前结点的最大贡献值，也就是当前结点向下走（向左或右，或者不走），最大的路径
+
+全局变量的值存储的是遍历的过程中所遇到的最大的路径和
+
+也就是说，递归函数一边在计算经过当前结点的最大路径和，一边在计算当前结点的最大贡献值（好给它的父结点使用，父结点不能用子结点的最大路径和，只能选子结点向下走的一条路
+
+```java
+class Solution {
+    int max;
+    public int maxPathSum(TreeNode root) {
+        max = root.val;
+        maxGain(root);
+        return max;
+    }
+    int maxGain(TreeNode root){
+        if(root == null) return 0;
+        int left = Math.max(maxGain(root.left), 0);
+        int right = Math.max(maxGain(root.right), 0);
+        max = Math.max(max, left + root.val + right);
+        return root.val + Math.max(left, right);
+    }
+}
+```
+
+
+
+#### 141 环形链表（快慢指针）
+
+如果链表中存在环，则返回 `true` 。 否则，返回 `false` 。
+
+我的写法：
+
+```java
+public class Solution {
+    public boolean hasCycle(ListNode head) {
+        ListNode nodeFast = head;
+        ListNode nodeSlow = head;
+        while(nodeFast != null){
+            if(nodeSlow == nodeFast.next) return true;
+            nodeFast = nodeFast.next;
+            if(nodeFast == null) return false;
+            nodeFast = nodeFast.next;
+            nodeSlow = nodeSlow.next;
+        }
+        return false;
+    }
+}
+```
+
+题解的写法：
+
+```java
+public class Solution {
+    public boolean hasCycle(ListNode head) {
+        if (head == null || head.next == null) {
+            return false;
+        }
+        ListNode slow = head;
+        ListNode fast = head.next;
+        while (slow != fast) {
+            if (fast == null || fast.next == null) {
+                return false;
+            }
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return true;
+    }
+}
+```
+
+
+
+#### 146 LRU缓存（面试高频题）
+
+请你设计并实现一个满足  LRU (最近最少使用) 缓存 约束的数据结构。
+实现 LRUCache 类：
+
++ LRUCache(int capacity) 以 正整数 作为容量 capacity 初始化 LRU 缓存
++ int get(int key) 如果关键字 key 存在于缓存中，则返回关键字的值，否则返回 -1 。
++ void put(int key, int value) 如果关键字 key 已经存在，则变更其数据值 value ；如果不存在，则向缓存中插入该组 key-value 。如果插入操作导致关键字数量超过 capacity ，则应该 逐出 最久未使用的关键字。
+
+函数 get 和 put 必须以 O(1) 的平均时间复杂度运行。
+
+自己实现了一个双向双端链表，再利用上HashMap，map的value是链表中的node，抽象出了插入和删除节点这两个函数。需要注意删除节点且删除map中对应item时的顺序！
+
+```java
+class ListNode{
+    ListNode pre;
+    ListNode next;
+    int key;
+    int value;
+    public ListNode(){}
+    public ListNode(int key, int value){
+        this.key = key;
+        this.value = value;
+    }
+}
+class LRUCache {
+    Map<Integer, ListNode> map = new HashMap<>();
+    int capacity;
+    int size = 0;
+    ListNode dummyHead, dummyTail;
+    public LRUCache(int capacity) {
+        dummyHead = new ListNode();
+        dummyTail = new ListNode();
+        dummyHead.next = dummyTail;
+        dummyTail.pre = dummyHead;
+        this.capacity = capacity;
+    }
+    void deleteNode(ListNode node){
+        node.next.pre = node.pre;
+        node.pre.next = node.next;
+    }
+    void insertNode(ListNode node){
+        node.pre = dummyHead;
+        node.next = dummyHead.next;
+        dummyHead.next.pre = node;
+        dummyHead.next = node;
+    }
+    public int get(int key) {
+        if(!map.containsKey(key)) return -1;
+        else{
+            ListNode node = map.get(key);    
+            deleteNode(node);
+            insertNode(node);
+            return node.value;
+        }
+    }
+    
+    public void put(int key, int value) {
+        if(map.containsKey(key)){
+            ListNode node = map.get(key);    
+            deleteNode(node);
+            insertNode(node);
+            node.value = value;
+            node.key = key;    
+        }
+        else{
+            if(size < capacity){    
+                size++;
+            }
+            else{
+                ListNode node = dummyTail.pre; // !!!在这里写出了一个bug，找了特别久没看出来
+                deleteNode(node);
+                map.remove(node.key);
+                // bug的写法：
+                // deleteNode(dummyTail.pre);
+                // delete之后dummyTail.pre已经变了，再拿去remove就错了
+                // map.remove(dummyTail.pre.key);
+                
+                // 其实把顺序反过来就没事了，我真傻
+                // map.remove(dummyTail.pre.key);
+                // deleteNode(dummyTail.pre);
+            }
+            ListNode node = new ListNode(key, value);
+            insertNode(node);
+            map.put(key, node);
+        }
+        
+    }
+}
+
+/**
+ * Your LRUCache object will be instantiated and called as such:
+ * LRUCache obj = new LRUCache(capacity);
+ * int param_1 = obj.get(key);
+ * obj.put(key,value);
+ */
+```
+
+
+
+#### 151 翻转字符串里的单词
+
+给你一个字符串 s ，逐个翻转字符串中的所有 单词 。
+
+单词 是由非空格字符组成的字符串。s 中使用至少一个空格将字符串中的 单词 分隔开。
+
+请你返回一个翻转 s 中单词顺序并用单个空格相连的字符串。
+
+说明：
+
+- 输入字符串 s 可以在前面、后面或者单词间包含多余的空格。
+- 翻转后单词间应当仅用一个空格分隔。
+- 翻转后的字符串中不应包含额外的空格。
+
+```
+输入：s = "  Bob    Loves  Alice   "
+输出："Alice Loves Bob"
+```
+
+提示：
+
++ 1 <= s.length <= 104
++ s 包含英文大小写字母、数字和空格 ' '
++ s 中 至少存在一个 单词
+
+
+进阶：
+
++ 请尝试使用 O(1) 额外空间复杂度的原地解法。
+
+原地解法只有c++可以做到，java的string是final型的，不行
+
+最简单的做法是用库函数，缺点是时间会稍微久一点
+
+```java
+class Solution {
+    public String reverseWords(String s) {
+        s = s.trim();
+        String[] array = s.split("\\s+");
+        List<String> list = Arrays.asList(array);
+        Collections.reverse(list);
+        return String.join(" ", list);
+    }
+}
+```
+
+我最先想到的做法是下面这个，用StringBuilder存中间结果，从后往前遍历地加上子串
+
+```java
+class Solution {
+    public String reverseWords(String s) {
+        s = s.trim();
+        StringBuilder strb = new StringBuilder();
+        int right = s.length();
+        for(int i = right - 1; i >= 0; i--){
+            if(s.charAt(i) == ' '){
+                strb.append(s.substring(i + 1, right));
+                strb.append(" ");
+                while(s.charAt(i) == ' '){
+                    i--;
+                }
+                right = i + 1;
+            }
+        }
+        // 注意！！要把最后一个也加上，因为它前面没有空格了，所以循环没处理到
+        strb.append(s.substring(0, right));
+        return strb.toString();
+    }
+}
+```
+
+用最省内存，最接近原地处理的思路写的代码如下，因为是java所以并没有达到O(1)
+
+大体的思路是先整个reverse，再对每个单词reverse
+
+```java
+class Solution {
+    public String reverseWords(String s) {
+        StringBuilder sb = trimSpaces(s);
+
+        reverse(sb, 0, sb.length() - 1);
+
+        reverseEachWord(sb);
+
+        return sb.toString();
+    }
+    StringBuilder trimSpaces(String s){
+        StringBuilder res = new StringBuilder();
+        for(int i = 0; i < s.length(); i++){
+            if(s.charAt(i) != ' ' || (i > 0 && s.charAt(i - 1) != ' ')){
+                res.append(s.charAt(i));
+            }
+        }
+        if(res.charAt(res.length() - 1) == ' '){
+            res.deleteCharAt(res.length() - 1);
+        }
+        return res;
+    }
+    void reverse(StringBuilder sb, int start, int end){
+        while(start < end){
+            char tmp = sb.charAt(start);
+            sb.setCharAt(start, sb.charAt(end));
+            sb.setCharAt(end, tmp);
+            end--;
+            start++;
+        }
+    }
+    void reverseEachWord(StringBuilder sb){
+        int start = 0, end = 0;
+        for(int i = 0; i < sb.length(); i++){
+            if(sb.charAt(i) == ' '){
+                end = i - 1;
+                reverse(sb, start, end);
+                start = i + 1;
+            }
+        }
+        reverse(sb, start, sb.length() - 1);
+    }
+}
+```
+
+
+
 #### 160 相交链表(不要小瞧这道题)
 
 这是我一开始的做法。是很容易想到的思路，但是粗心了好几个地方，打了好几次log，看了很久才发现
@@ -3069,6 +3571,126 @@ public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
 
 
 
+#### 206 反转链表（超级经典）
+
+**迭代**
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        // if(head == null) return head; 这行可以不写
+        ListNode pre = null;
+        ListNode cur = head;
+        ListNode next;
+        while(cur != null){
+            next = cur.next;
+            cur.next = pre;
+            pre = cur;
+            cur = next;    
+        }
+        return pre;
+    }
+}
+```
+
+**递归**
+
+```java
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        if(head == null || head.next == null) return head; // 注意！记得判空
+        ListNode newHead = reverseList(head.next);
+        head.next.next = head;
+        head.next = null;
+        return newHead;
+    }
+}
+```
+
+
+
+#### 215 数组中的第K个最大元素（面试高频题）
+
+给定整数数组 `nums` 和整数 `k`，请返回数组中第 `**k**` 个最大的元素。
+
+请注意，你需要找的是数组排序后的第 `k` 个最大的元素，而不是第 `k` 个不同的元素。
+
+```java
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+        k = nums.length - k;
+        int low = 0, high = nums.length - 1;
+        while(low < high){
+            int pos = partition(nums, low, high);
+            if(pos == k) break;
+            else if(pos < k){
+                low = pos + 1;
+            }
+            else{
+                high = pos - 1;
+            }
+        }
+        return nums[k];
+    }
+    private int partition(int[] list, int low, int high){
+        int tmp = list[low];
+        while(low < high){
+            while(low < high && list[high] > tmp){
+                high--;
+            }
+            list[low] = list[high];
+            while(low < high && list[low] <= tmp){
+                low++;
+            }
+            list[high] = list[low];
+        }
+        list[low] = tmp;
+        return low;
+    }
+}
+```
+
+
+
+#### 236 二叉树的最近公共祖先（经典）
+
+给定一个二叉树, 找到该树中两个指定节点的最近公共祖先。
+
+递归函数返回值挺特别的
+
+如果左子树中包含一个结点，右子树也包含一个结点，说明公共祖先是当前结点。
+
+如果左子树没有包含，说明公共祖先在右子树上。反之亦然。如果root为p或q，返回root
+
+思路有点绕，其实可以理解为，p和q把自己的值往上传给它们的父结点，直到有一个点它的左右各有一个p或q
+
+```java
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null) return null;
+        if(root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        if(left != null && right != null) return root;
+        if(left != null) return left;
+        if(right != null) return right;
+        return null;
+    }
+}
+```
+
+
+
 #### 239 滑动窗口最大值（单调双端队列）
 
 给你一个整数数组 nums，有一个大小为 k 的滑动窗口从数组的最左侧移动到数组的最右侧。你只可以看到在滑动窗口内的 k 个数字。滑动窗口每次只向右移动一位。
@@ -3103,6 +3725,185 @@ class Solution {
 **注意**和剑指offer的59-1相同，但是代码复制过去却不行。
 
 **原因** 剑指里输入的数组可能长度为0，需要增加一个判断，长度为零时返回[]
+
+
+
+#### 450 删除二叉搜索树中的节点（掌握模板）
+
+给定一个二叉搜索树的根节点 root 和一个值 key，删除二叉搜索树中的 key 对应的节点，并保证二叉搜索树的性质不变。返回二叉搜索树（有可能被更新）的根节点的引用。
+
+一般来说，删除节点可分为两个步骤：
+
+首先找到需要删除的节点；
+如果找到了，删除它。
+
+看了官方题解做的，一开始真的毫无思路
+
+首先要确定找到要删的结点之后怎么删，这是最重要的！
+
++ 要拿它的前驱或者后继节点来替代它
++ 要怎么替代它？之间替吗？
++ 不行，这是这道题让我感觉到最绕的。联系链表里删除节点，1->2->3要删掉2的话，不能说node2=node3这样去删，一般我们用的是node1.next=node3，或者像这道题就是node2.val=node3.val, 然后去删除node3
+
+现在总结一下。
+
++ 首先需要有两个函数用来求一个结点的前驱和后继
++ 当我们找到要删除的结点时，如果是叶子节点，直接赋值为null，返回；如果有右子树，则让当前节点赋值为后继节点的值，再去右子树里删掉这个后继节点；如果没有右子树，则让当前节点赋值为前驱节点的值，再去左子树里删掉这个前驱节点
++ 需要注意的是，如果是去左子树或者右子树里删除，删除完之后会返回新的子树的根，需要把这个返回值赋给当前节点的左或右孩子，这一步也非常重要，而且容易漏
+
+```java
+class Solution {
+    TreeNode successor(TreeNode root) {
+        root = root.right;
+        while(root.left != null) root = root.left;
+        return root;
+    }
+    TreeNode predecessor(TreeNode root) {
+        root = root.left;
+        while(root.right != null) root = root.right;
+        return root;
+    }
+    public TreeNode deleteNode(TreeNode root, int key) {
+        if(root == null) return null;
+        if(root.val > key) root.left = deleteNode(root.left, key);
+        else if(root.val < key) root.right = deleteNode(root.right, key);
+        else{
+            if(root.left == null && root.right == null) root = null;
+            else if(root.right != null){
+                root.val = successor(root).val;
+                root.right = deleteNode(root.right, root.val);
+            }
+            else {
+                root.val = predecessor(root).val;
+                root.left = deleteNode(root.left, root.val);
+            }
+        }
+        return root;
+    }
+}
+```
+
+
+
+#### 468 验证IP地址
+
+编写一个函数来验证输入的字符串是否是有效的 IPv4 或 IPv6 地址。
+
+如果是有效的 IPv4 地址，返回 "IPv4" ；
+如果是有效的 IPv6 地址，返回 "IPv6" ；
+如果不是上述类型的 IP 地址，返回 "Neither" 。
+IPv4 地址由十进制数和点来表示，每个地址包含 4 个十进制数，其范围为 0 - 255， 用(".")分割。比如，172.16.254.1；
+
+同时，IPv4 地址内的数不会以 0 开头。比如，地址 172.16.254.01 是不合法的。
+
+IPv6 地址由 8 组 16 进制的数字来表示，每组表示 16 比特。这些组数字通过 (":")分割。比如,  2001:0db8:85a3:0000:0000:8a2e:0370:7334 是一个有效的地址。而且，我们可以加入一些以 0 开头的数字，字母可以使用大写，也可以是小写。所以， 2001:db8:85a3:0:0:8A2E:0370:7334 也是一个有效的 IPv6 address地址 (即，忽略 0 开头，忽略大小写)。
+
+然而，我们不能因为某个组的值为 0，而使用一个空的组，以至于出现 (::) 的情况。 比如， 2001:0db8:85a3::8A2E:0370:7334 是无效的 IPv6 地址。
+
+同时，在 IPv6 地址中，多余的 0 也是不被允许的。比如， 02001:0db8:85a3:0000:0000:8a2e:0370:7334 是无效的。
+
+简直就是疯狂试错的一道题
+
+```java
+class Solution {
+    public String validIPAddress(String queryIP) {
+        if(queryIP.indexOf('.') != -1){ // 可以用queryIP.contains(".")
+            if(queryIP.endsWith(".")) return "Neither"; // 结尾的不会被split划分进去，所以必须特判
+            String[] ipv4 = queryIP.split("\\."); // split得先转义
+            if(ipv4.length != 4) return "Neither";
+            for(int i = 0; i < 4; i++){
+                if(!isValidIPv4(ipv4[i])) return "Neither"; 
+            }
+            return "IPv4";
+        }
+        if(queryIP.indexOf(':') != -1){
+            if(queryIP.endsWith(":")) return "Neither"; // 结尾的不会被split划分进去，所以必须特判
+            String[] ipv6 = queryIP.split(":"); // .split("\\:")也可以
+            if(ipv6.length != 8) return "Neither";
+            for(int i = 0; i < 8; i++){
+                if(!isValidIPv6(ipv6[i])) return "Neither";
+            }
+            return "IPv6";
+        }
+        return "Neither";
+    }
+    boolean isValidIPv4(String str){
+        if(str.length() == 0 || str.length() > 3) return false; // 长度必须在1到3之间！
+        if(str.startsWith("0") && str.length() > 1) return false; // 开头是0且不止一位才是错的，如果只有一位0就可以
+        int sum = 0;
+        for(int i = 0; i < str.length(); i++){
+            if(str.charAt(i) > '9' || str.charAt(i) < '0') return false;
+            sum = sum * 10 + str.charAt(i) - '0';
+        }
+        if(sum > 255) return false;
+        return true;
+    }
+    boolean isValidIPv6(String str){
+        if(str.length() == 0 || str.length() > 4) return false; // 长度必须在1到4之间！
+        for(int i = 0; i < str.length(); i++){
+            char c = str.charAt(i);
+            if((c <= '9' && c >= '0') || (c <= 'f' && c >= 'a') || (c <= 'F' && c >= 'A')){ // 16进制是a到f不是a到e
+                continue;
+            }
+            else return false;
+        }
+        return true;
+    }
+}
+```
+
+看了题解，最简单的是调库，这里就不放代码了
+
+另一种做法是正则，正则可以避免非常多的if...else，代码会简洁很多，推荐
+
+```java
+import java.util.regex.Pattern;
+class Solution {
+  String chunkIPv4 = "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])";
+  Pattern pattenIPv4 =
+          Pattern.compile("^(" + chunkIPv4 + "\\.){3}" + chunkIPv4 + "$");
+
+  String chunkIPv6 = "([0-9a-fA-F]{1,4})";
+  Pattern pattenIPv6 =
+          Pattern.compile("^(" + chunkIPv6 + "\\:){7}" + chunkIPv6 + "$");
+
+  public String validIPAddress(String IP) {
+    if (IP.contains(".")) {
+      return (pattenIPv4.matcher(IP).matches()) ? "IPv4" : "Neither";
+    }
+    else if (IP.contains(":")) {
+      return (pattenIPv6.matcher(IP).matches()) ? "IPv6" : "Neither";
+    }
+    return "Neither";
+  }
+}
+```
+
+
+
+#### 543 二叉树的直径（类似第124题）
+
+给定一棵二叉树，你需要计算它的直径长度。一棵二叉树的直径长度是任意两个结点路径长度中的最大值。这条路径可能穿过也可能不穿过根结点。
+
+参考的124题思路写的，递归函数的返回值表示经过当前结点的最大路径长度，比较难想的是如果结点为null怎么办，后来发现null的时候返回-1，就能在结点为叶子结点的时候返回0，正好不需要额外的特判
+
+```java
+class Solution {
+    int max = 0;
+    public int diameterOfBinaryTree(TreeNode root) {
+        diameterGain(root);
+        return max;
+    }
+    int diameterGain(TreeNode root){
+        if(root == null) return -1;//一个小trick
+        int left = diameterGain(root.left);
+        int right = diameterGain(root.right);
+
+        max = Math.max(max, left + right + 2);
+        return Math.max(left, right) + 1;
+    }
+}
+```
 
 
 
