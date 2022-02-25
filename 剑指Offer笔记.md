@@ -2232,7 +2232,7 @@ class Solution {
 
 
 
-#### 49 丑数（经典题，做过又忘）
+#### 49 丑数（经典题，做过又忘，多路归并）
 
 我们把只包含质因子 2、3 和 5 的数称作丑数（Ugly Number）。求按从小到大的顺序的第 n 个丑数。
 
@@ -2421,6 +2421,63 @@ class Solution {
     }
 }
 ```
+
+另一种思路是https://mp.weixin.qq.com/s/3mksg14RLc15BhKuAR5oHA这个题解里看的，我觉得这个会比官方题解的思路更好懂。
+
+做法是在merge的时候，如果当前的left大于当前的right，意味着 「左子数组当前元素 至 末尾元素」 与 「右子数组当前元素」 构成了若干 「逆序对」。
+
+代码如下
+
+```java
+class Solution {
+    public int reversePairs(int[] nums) {
+        return reversePairs(nums, 0, nums.length - 1);
+    }
+    public int reversePairs(int[] nums, int left, int right){
+        if(left >= right) return 0;
+        int mid = left + (right - left) / 2;
+        int countLeft = reversePairs(nums, left, mid);
+        int countRight = reversePairs(nums, mid + 1, right);       
+        if(nums[mid] <= nums[mid + 1]) return countLeft + countRight;
+        int countBoth = merge(nums, left, mid, right);
+        return countLeft + countRight + countBoth;
+    }
+    public int merge(int[] nums, int left, int mid, int right){
+        int[] temp = new int[right - left + 1];
+        int i = left, j = mid + 1, k = 0;
+        int count = 0;
+        while(i <= mid && j <= right){
+            if(nums[i] <= nums[j]){
+                temp[k] = nums[i];
+                i++;
+            }
+            else{
+                temp[k] = nums[j];
+                j++;
+                // 和普通merge比只要改一行
+                count += mid - i + 1;
+            }
+            k++;
+        }
+        while(i <= mid){
+            temp[k] = nums[i];
+            i++;
+            k++;
+        }
+        while(j <= right){
+            temp[k] = nums[j];
+            j++;
+            k++;
+        }
+        for(i = left; i <= right; i++){
+            nums[i] = temp[i - left];
+        }
+        return count;
+    }
+}
+```
+
+
 
 
 
