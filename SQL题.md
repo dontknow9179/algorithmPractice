@@ -69,3 +69,30 @@ BEGIN
 END
 ```
 
+
+
+#### 178 分数排名（4大排名函数）
+
+编写 SQL 查询对分数进行排序。排名按以下规则计算:
+
+分数应按从高到低排列。
+如果两个分数相等，那么两个分数的排名应该相同。
+在排名相同的分数后，排名数应该是下一个连续的整数。换句话说，排名之间不应该有空缺的数字。
+按 score 降序返回结果表。
+
++ rank()
+
++ dense_rank()
++ row_number() 在排名时序号 连续 不重复，即使遇到表中的两个一样的数值亦是如此
++ ntil(group_count)
+
+```sql
+dense_rank() over(order by score desc)
+```
+
+答案
+
+```sql
+select score, dense_rank() over(order by score desc) as "rank" from scores;
+```
+
