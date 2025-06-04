@@ -21,6 +21,23 @@ class Solution {
 
 **注意** 循环外也得有返回值，返回new int[0]也行
 
+```c++
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> map;
+        for (int i = 0; i < nums.size(); i++) {
+            if (map.contains(nums[i])) {
+                return {map[nums[i]], i};
+            } else {
+                map[target - nums[i]] = i;
+            }
+        }
+        return {-1,-1};
+    }
+};
+```
+
 
 
 #### 2 两数相加（链表合并模拟加法）
@@ -115,6 +132,46 @@ class Solution {
 }
 ```
 
+c++版本代码：
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode* dummy_head = new ListNode();
+        ListNode* p1 = l1;
+        ListNode* p2 = l2;
+        ListNode* p3 = dummy_head;
+        int sum = 0, carry = 0;
+        int v1 = 0, v2 = 0;
+        while (p1 != nullptr || p2 != nullptr) {
+            v1 = p1 != nullptr ? p1->val : 0;
+            v2 = p2 != nullptr ? p2->val : 0;
+            sum = (carry + v1 + v2) % 10;
+            carry = (carry + v1 + v2) >= 10;
+            p3->next = new ListNode(sum);
+            p3 = p3->next;
+            if (p1 != nullptr) p1 = p1->next;
+            if (p2 != nullptr) p2 = p2->next;
+        }
+        if (carry != 0) {
+            p3->next = new ListNode(carry);
+        }
+        return dummy_head->next;
+    }
+};
+```
+
 
 
 #### 3 无重复字符的最长子串（经典，双指针，滑动窗口）
@@ -144,6 +201,28 @@ class Solution {
 ```
 
 做过很多遍居然还是忘记怎么做了，只知道用set来判断是否重复，看了题解才知道是用双指针来做。。。哎
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int res = 0, left = 0, right = 0;
+        unordered_set<char> set;
+        while (right < s.size()) {
+            while (set.contains(s[right])) {
+                set.erase(s[left]);
+                left++;
+            }
+            set.insert(s[right]);
+            right++;
+            res = max(res, right - left);
+        }
+        return res;
+    }
+};
+```
 
 
 
@@ -345,6 +424,41 @@ class Solution {
 }
 ```
 
+时间复杂度O(N^2)
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int len = 0;
+        int start = 0;
+        int tmp, tmp1, tmp2;
+        string res;
+        for (int i = 0; i < s.size(); i++) {
+            tmp1 = longestPalindrome(s, i, i);
+            tmp2 = longestPalindrome(s, i, i + 1);
+            tmp = max(tmp1, tmp2);
+            if (tmp > len) {
+                len = tmp;
+                start = i - (tmp - 1) / 2;
+            }
+        }
+        return s.substr(start, len);
+    }
+    int longestPalindrome(string& s, int left, int right) {
+        while (left >= 0 && right < s.size()) {
+            if (s[left] == s[right]) {
+                left--;
+                right++;
+            } else break;
+        }
+        return right - left - 1;
+    }
+};
+```
+
 
 
 #### 6 Z字形变换
@@ -398,7 +512,36 @@ class Solution {
 
 **注意：**numRows = 1, s = "AB" 这种情况需要特殊处理
 
- 
+ c++版本代码：
+
+```C++
+class Solution {
+public:
+    string convert(string s, int numRows) {
+        if (numRows == 1) return s;
+        vector<string> strs(numRows, "");
+        int row = 0;
+        int dir = 1;
+        string res;
+        for (int i = 0; i < s.size(); i++) {
+            strs[row] += s[i];
+            if (row == numRows - 1) {
+                dir = -1;
+            }
+            if (row == 0) {
+                dir = 1;
+            }
+            row += dir;
+        }
+        for (int i = 0; i < numRows; i++) {
+            res += strs[i];
+        }
+        return res;
+    }
+};
+```
+
+
 
 #### 7 整数反转（错了两次的简单题）
 
@@ -492,6 +635,7 @@ class Solution {
                 return flag == true ? 2147483647 : -2147483648; 
             }
             sum = sum * 10 + cur;
+            // 这里不能写成 sum * 10 + s.charAt(cur_pos) - '0',会导致中间结果溢出
             cur_pos++;           
         }
         return flag == true ? sum : -sum;//第一次提交的时候这里忘记判断flag了，记得判断！
@@ -500,6 +644,33 @@ class Solution {
 ```
 
 这道题挺简单的，只需要整数，但也要注意数组越界的问题和返回值要加正负
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    int myAtoi(string s) {
+        if (s == "") return 0;
+        int start = s.find_first_not_of(" ");
+        if (start >= s.size()) return 0;
+        bool flag = true;
+        int res = 0;
+        if (s[start] == '+' || s[start] == '-') {
+            flag = s[start] == '+';
+            start++;
+        }
+        for (int i = start; i < s.size(); i++) {
+            if (s[i] < '0' || s[i] > '9') break;
+            if (res > 214748364 || (res == 214748364 && s[i] > '7')) {
+                return flag ? 2147483647 : -2147483648;
+            }
+            res = res * 10 + (s[i] - '0');
+        }
+        return flag ? res : -res;
+    }
+};
+```
 
 
 
@@ -565,6 +736,24 @@ class Solution {
 ```
 
 这种写法写错了好几次，易错点是以0结尾但不是0的数字，应该作为特殊情况处理
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    bool isPalindrome(int x) {
+        if (x == 0) return true;
+        if (x < 0 || x % 10 == 0) return false;
+        int y = 0;
+        while (y < x) {
+            y = y * 10 + x % 10;
+            x = x / 10; 
+        }
+        return y == x || (y / 10) == x;
+    }
+};
+```
 
 
 
@@ -666,6 +855,37 @@ class Solution {
 ```
 
 题解的做法则是把判断的部分放在了match函数里，其余部分就显得很好懂
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        s = '_' + s;
+        p = '_' + p;
+        vector<vector<bool>> dp(p.size(), vector<bool>(s.size(), false));
+        dp[0][0] = true;
+        for (int i = 1; i < p.size(); i++) {
+            for (int j = 0; j < s.size(); j++) {
+                if (isMatch(s[j], p[i])) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else if (p[i] == '*') {
+                    if (isMatch(s[j], p[i - 1])) {
+                        dp[i][j] = dp[i][j - 1] || dp[i - 2][j];
+                    } else {
+                        dp[i][j] = dp[i - 2][j];
+                    }
+                }
+            }
+        }
+        return dp[p.size() - 1][s.size() - 1];
+    }
+    bool isMatch(char c1, char c2) {
+        return c1 == c2 || (c2 == '.' && c1 != '_');
+    }
+};
+```
 
 
 
@@ -843,6 +1063,24 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    string intToRoman(int num) {
+        vector<string> strs = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+        vector<int> nums = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+        string res = "";
+        for (int i = 0; i < nums.size(); i++) {
+            while (num >= nums[i]) {
+                res += strs[i];
+                num -= nums[i];
+            }
+        }
+        return res;
+    }
+};
+```
+
 
 
 #### 13 罗马数字转整数
@@ -868,6 +1106,26 @@ class Solution {
 ```
 
 结果题解居然搞模拟，一个字符一个字符地读，如果这个字符比后一个小，就减，否则就加，最后时间空间也没比我这个好
+
+```c++
+class Solution {
+public:
+    int romanToInt(string s) {
+        vector<string> strs = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+        vector<int> nums = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+        int res = 0;
+        int i = 0;
+        while (s.size() > 0) {
+            while (s.starts_with(strs[i])) {
+                res += nums[i];
+                s = s.substr(strs[i].size());
+            }
+            i++;
+        }
+        return res;
+    }
+};
+```
 
 
 
@@ -916,6 +1174,24 @@ public:
             for(int j = 1; j < strs.size(); j++){
                 if(i >= strs[j].length() || strs[j][i] != c){
                     return strs[0].substr(0, i);
+                }
+            }
+        }
+        return strs[0];
+    }
+};
+```
+
+```c++
+class Solution {
+public:
+    string longestCommonPrefix(vector<string>& strs) {
+        int m = strs.size();
+        int n = strs[0].length();
+        for (int i = 0; i < n; i++) {
+            for (int j = 1; j < m; j++) {
+                if (i >= strs[j].length() || strs[j][i] != strs[0][i]) {
+                    return strs[0].substr(0, i); 
                 }
             }
         }
@@ -977,6 +1253,29 @@ class Solution {
 在双指针遍历的时候，先固定左指针（外层循环），将右指针左移直到和不大于target（里层循环），然后判断
 
 可以测试的边界例子有：[0, 0, 0], [-1, 0, 1], [0, 0, 1]等
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> res;
+        sort(nums.begin(), nums.end());
+        for (int i = 0; i < nums.size() - 2; i++) {
+            if (i > 0 && nums[i] == nums[i - 1]) continue;
+            int k = nums.size() - 1;
+            for (int j = i + 1; j < k; j++) {
+                if (j > i + 1 && nums[j] == nums[j - 1]) continue;
+                while (nums[i] + nums[j] + nums[k] > 0 && k > j) k--;
+                if (k == j) break;
+                if (nums[i] + nums[j] + nums[k] == 0) {
+                    res.push_back({nums[i], nums[j], nums[k]});
+                }
+            }
+        }
+        return res;
+    }
+};
+```
 
 
 
@@ -1063,9 +1362,38 @@ class Solution {
 
 陷入了巨大的困惑，为什么相似的两道题题解的做法不一样而且都是更快，时间复杂度都是O(N^2)，但我写的就是更慢些，但其实也就差3ms
 
+```c++
+class Solution {
+public:
+    int threeSumClosest(vector<int>& nums, int target) {
+        sort(nums.begin(), nums.end());
+        int sum = nums[0] + nums[1] + nums[2];
+        for (int i = 0; i < nums.size() - 2; i++) {
+            if (i > 0 && nums[i] == nums[i - 1]) continue;
+            int k = nums.size() - 1;
+            int j = i + 1;
+            while (j < k) {
+                int tmp = nums[i] + nums[j] + nums[k];
+                if (tmp == target) return target;
+                if (abs(tmp - target) < abs(sum - target)) sum = tmp;
+                if (tmp > target) {
+                    k--;
+                    while (nums[k] == nums[k + 1] && j < k) k--;
+                }
+                if (tmp < target) {
+                    j++;
+                    while (nums[j] == nums[j - 1] && j < k) j++;
+                }
+            }
+        }
+        return sum;
+    }
+};
+```
 
 
-#### 17 电话号码的数字组合（backtracking经典）
+
+#### 17 电话号码的数字组合（回溯）
 
 给定一个仅包含数字 2-9 的字符串，返回所有它能表示的字母组合。答案可以按 任意顺序 返回。
 
@@ -1108,6 +1436,32 @@ class Solution {
         return;
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    vector<string> strs = {"","","abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"};
+    vector<string> letterCombinations(string digits) {
+        if (digits.size() == 0) return {};
+        vector<string> res;
+        string cur = "";
+        backtrack(res, cur, digits, 0);
+        return res;
+    }
+    void backtrack(vector<string>& res, string& cur, string& digits, int pos) {
+        if (pos == digits.size()) {
+            res.emplace_back(cur);
+            return;
+        }
+        string cur_digit = strs[digits[pos] - '0'];
+        for (int i = 0; i < cur_digit.size(); i++) {
+            cur += cur_digit[i];
+            backtrack(res, cur, digits, pos + 1);
+            cur = cur.substr(0, cur.size() - 1);
+        }
+    }
+};
 ```
 
 
@@ -1158,6 +1512,41 @@ class Solution {
         return res;
     }
 }
+```
+
+
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> res;
+        int n = nums.size();
+        for (int i = 0; i < n - 3; i++) {
+            if (i > 0 && nums[i] == nums[i - 1]) continue;
+            if ((long)nums[i] + nums[i + 1] + nums[i + 2] + nums[i + 3] > target) break;
+            if ((long)nums[i] + nums[n - 1] + nums[n - 2] + nums[n - 3] < target) continue;
+            for (int j = i + 1; j < n - 2; j++) {
+                if (j > i + 1 && nums[j] == nums[j - 1]) continue;
+                if ((long)nums[i] + nums[j] + nums[j + 1] + nums[j + 2] > target) break;
+                if ((long)nums[i] + nums[j] + nums[n - 1] + nums[n - 2] < target) continue;
+                int z = n - 1;
+                for (int k = j + 1; k < z; k++) {
+                    if (k > j + 1 && nums[k] == nums[k - 1]) continue;
+                    while ((long)nums[i] + nums[j] + nums[k] + nums[z] > target && k < z) {
+                        z--;
+                    }
+                    if (z == k) break;
+                    if ((long)nums[i] + nums[j] + nums[k] + nums[z] == target) {
+                        res.push_back({nums[i], nums[j], nums[k], nums[z]});
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
 ```
 
 
@@ -1288,7 +1677,7 @@ class Solution {
 
 
 
-#### 22 括号生成
+#### 22 括号生成（回溯）
 
 数字 `n` 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 **有效的** 括号组合。
 
@@ -1331,6 +1720,34 @@ class Solution {
         }
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    vector<string> generateParenthesis(int n) {
+        vector<string> res;
+        string str = "";
+        backtrack(res, str, n, 0, 0);
+        return res;
+    }
+    void backtrack(vector<string>& res, string& str, int n, int left_num, int right_num) {
+        if (str.size() == 2 * n) {
+            res.emplace_back(str);
+            return;
+        }
+        if (left_num < n) {
+            str += '(';
+            backtrack(res, str, n, left_num + 1, right_num);
+            str.pop_back();
+        }
+        if (right_num < left_num) {
+            str += ')';
+            backtrack(res, str, n, left_num, right_num + 1);
+            str.pop_back();
+        }
+    }
+};
 ```
 
 
@@ -1448,6 +1865,50 @@ class Solution {
 分治归并比优先队列略好写点
 
 两种写法都要考虑lists为空，lists[i]为空的情况
+
+
+
+c++代码：
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    struct cmp {
+        bool operator()(ListNode* p1, ListNode* p2) {
+            return p1->val > p2->val;
+        }
+    };
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        priority_queue<ListNode*, vector<ListNode*>, cmp> queue;
+        ListNode *dummy = new ListNode(0, nullptr);
+        ListNode *p = dummy;
+        for (int i = 0; i < lists.size(); i++) {
+            if (lists[i] != nullptr)
+                queue.push(lists[i]);
+        }
+        while (!queue.empty()) {
+            ListNode *cur = queue.top();
+            queue.pop();
+            p->next = cur;
+            p = p->next;
+            if (cur->next != nullptr) {
+                queue.push(cur->next);
+            }
+        }
+        return dummy->next;
+    }
+};
+```
 
 
 
@@ -1733,6 +2194,8 @@ class Solution {
 
 接着遍历string，取出子串判断是否符合条件，我使用的策略是先判断一下这个子串的第一个单词是否符合要求，符合的话再取，然后就是为这个子串建立第二个哈希表，当第二个哈希表中某个单词出现的次数大于第一个哈希表时就break，还有当这个单词在第一个哈希表中不存在时break，就不需要其他条件了，像是次数不够的情况必然出现前两种之一。
 
+**[更新]**：现在这种做法会超时，需要用滑动窗口来做
+
 ```java
 class Solution {
     public List<Integer> findSubstring(String s, String[] words) {
@@ -1762,6 +2225,49 @@ class Solution {
         return res;
     }
 }
+```
+
+c++滑动窗口：
+
+```c++
+class Solution {
+public:
+    vector<int> findSubstring(string s, vector<string>& words) {
+        vector<int> res;
+        int word_len = words[0].size();
+        int substr_len = words.size() * word_len;
+        for (int i = 0; i < word_len && i + substr_len <= s.size(); i++) {
+            unordered_map<string, int> differ;
+            for (int j = 0; j < words.size(); j++) {
+                differ[s.substr(i + j * word_len, word_len)]++;
+            }
+            for (string &word : words) {
+                differ[word]--;
+                if (differ[word] == 0) {
+                    differ.erase(word);
+                }
+            }
+            for (int start = i; start + substr_len <= s.size(); start += word_len) {
+                if (start != i) {
+                    string new_word = s.substr(start + (words.size() - 1) * word_len, word_len);
+                    differ[new_word]++;
+                    if (differ[new_word] == 0) {
+                        differ.erase(new_word);
+                    }
+                    string left_word = s.substr(start - word_len, word_len);
+                    differ[left_word]--;
+                    if (differ[left_word] == 0) {
+                        differ.erase(left_word);
+                    }
+                }
+                if (differ.empty()) {
+                    res.push_back(start);
+                }
+            }
+        }
+        return res;
+    }
+};
 ```
 
 
@@ -1894,6 +2400,28 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    int longestValidParentheses(string s) {
+        int n = s.size();
+        vector<int> dp(n, 0);
+        int res = 0;
+        for (int i = 0; i < n; i++) {
+            if (s[i] == ')' && i > 0) {
+                if (s[i - 1] == '(') {
+                    dp[i] = 2 + (i > 1 ? dp[i - 2] : 0);
+                } else if (i - dp[i - 1] - 1 >= 0 && s[i - dp[i - 1] - 1] == '(') {
+                    dp[i] = 2 + dp[i - 1] + (i - dp[i - 1] - 2 >= 0 ? dp[i - dp[i - 1] - 2]: 0);
+                }
+                res = max(res, dp[i]);
+            }
+        }
+        return res;
+    }
+};
+```
+
 
 
 #### 33 搜索旋转排序数组（二分查找经典变体，81题是加强版）
@@ -1960,7 +2488,42 @@ class Solution {
 }
 ```
 
-这道题比较纠结的点是mid到底要算在左边还是右边，我想了很久感觉应该是都算
+
+
+c++版本代码：
+
+```c++
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size() - 1;
+        int mid;
+        while (left <= right) {
+            mid = left + (right - left) / 2;
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] >= nums[left]) {
+                if (target == nums[left]) {
+                    return left;
+                } else if (target < nums[mid] && target > nums[left]) {
+                    right = mid - 1;
+                } else {
+                    left = mid + 1;
+                }
+            } else {
+                if (target == nums[right]) {
+                    return right;
+                } else if (target > nums[mid] && target < nums[right]) {
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+        }
+        return -1;
+    }
+};
+```
 
 
 
@@ -2031,6 +2594,45 @@ class Solution {
         return new int[]{resLeft, resRight};
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        int left = 0, right = nums.size() - 1;
+        int res_left = -1, res_right = -1;
+        int mid = 0;
+        while(left < right) {
+            mid = left + (right - left) / 2;
+            if (nums[mid] > target) {
+                right = mid - 1;
+            } else if (nums[mid] == target) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+        }
+        if (left < nums.size() && nums[left] == target) {
+            res_left = left;
+        }
+        left = 0, right = nums.size() - 1;
+        while(left < right) {
+            mid = left + (right - left) / 2 + 1;
+            if (nums[mid] > target) {
+                right = mid - 1;
+            } else if (nums[mid] == target) {
+                left = mid;
+            } else {
+                left = mid + 1;
+            }
+        }
+        if (left < nums.size() && nums[left] == target) {
+            res_right = left;
+        }
+        return {res_left, res_right};
+    }
+};
 ```
 
 
@@ -2186,6 +2788,52 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    bool rows[9][9] = {};
+    bool cols[9][9] = {};
+    bool blocks[9][9] = {};
+    vector<vector<int>> spaces;
+    void solveSudoku(vector<vector<char>>& board) {
+        for (int i = 0; i < board.size(); i++) {
+            for (int j = 0; j < board[0].size(); j++) {
+                if (board[i][j] == '.') {
+                    spaces.push_back({i, j});
+                } else {
+                    int index = board[i][j] - '0' - 1;
+                    rows[i][index] = true;
+                    cols[j][index] = true;
+                    int block_idx = (i / 3) * 3 + (j / 3);
+                    blocks[block_idx][index] = true;
+                }
+            }
+        }
+        backtrack(board, 0);
+    }
+    bool backtrack(vector<vector<char>>& board, int pos) {
+        if (pos == spaces.size()) return true;
+        int i = spaces[pos][0];
+        int j = spaces[pos][1];
+        int block_idx = (i / 3) * 3 + (j / 3);
+        for (int k = 0; k < 9; k++) {
+            if (!rows[i][k] && !cols[j][k] && !blocks[block_idx][k]) {
+                rows[i][k] = true;
+                cols[j][k] = true;
+                blocks[block_idx][k] = true;
+                board[i][j] = '0' + k + 1;
+                if (backtrack(board, pos + 1)) return true;
+                rows[i][k] = false;
+                cols[j][k] = false;
+                blocks[block_idx][k] = false;
+                board[i][j] = '.';
+            }
+        }
+        return false;
+    }
+};
+```
+
 
 
 #### 38 外观数列
@@ -2243,7 +2891,7 @@ class Solution {
 
 
 
-#### 39 组合总和（又是回溯，注意copy）
+#### 39 组合总和（回溯，注意copy，元素无重可重复选）
 
 给你一个 无重复元素 的整数数组 candidates 和一个目标整数 target ，找出 candidates 中可以使数字和为目标数 target 的 所有不同组合 ，并以列表形式返回。你可以按 任意顺序 返回这些组合。
 
@@ -2316,9 +2964,34 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<vector<int>> res;
+        vector<int> subset;
+        sort(candidates.begin(), candidates.end());
+        backtrack(res, subset, candidates, target, 0);
+        return res;
+    }
+    void backtrack(vector<vector<int>>& res, vector<int>& subset, vector<int>& candidates, int target, int start) {
+        if (target == 0) {
+            res.emplace_back(subset);
+            return;
+        }
+        for (int i = start; i < candidates.size(); i++) {
+            if (candidates[i] > target) break;
+            subset.emplace_back(candidates[i]);
+            backtrack(res, subset, candidates, target - candidates[i], i);
+            subset.pop_back();
+        }
+    }
+};
+```
 
 
-#### 40 组合总和二（比上一题难了不少）
+
+#### 40 组合总和二（回溯，元素有重不可重复选）
 
 给定一个数组 candidates 和一个目标数 target ，找出 candidates 中所有可以使数字和为 target 的组合。
 
@@ -2386,6 +3059,35 @@ class Solution {
 
 
 
+第二次做的c++版本代码：
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        vector<vector<int>> res;
+        vector<int> subset;
+        sort(candidates.begin(), candidates.end());
+        backtrack(res, subset, candidates, target, 0);
+        return res;
+    }
+    void backtrack(vector<vector<int>>& res, vector<int>& subset, vector<int>& candidates, int target, int start) {
+        if (target == 0) {
+            res.emplace_back(subset);
+            return;
+        }
+        for (int i = start; i < candidates.size(); i++) {
+            if (candidates[i] > target || (i > start && candidates[i] == candidates[i - 1])) continue;
+            subset.emplace_back(candidates[i]);
+            backtrack(res, subset, candidates, target - candidates[i], i + 1);
+            subset.pop_back();
+        }
+    }
+};
+```
+
+
+
 #### 41 缺失的第一个正数（Hard, 桶排序, 因为swap找了半天bug）
 
 给你一个未排序的整数数组 nums ，请你找出其中没有出现的最小的正整数。 
@@ -2410,6 +3112,7 @@ class Solution {
         // return nums.length + 1;
         int n = nums.length;
         for(int i = 0; i < n; i++){
+            // nums[i] != nums[nums[i] - 1]这个判断很重要，不加会死循环
             while(nums[i] >= 1 && nums[i] <= n && nums[i] != i + 1 && nums[i] != nums[nums[i] - 1]){
                 // 这个可以
                 int tmp = nums[nums[i] - 1];
@@ -2440,7 +3143,31 @@ class Solution {
 
 
 
-#### 42 接雨水（超级经典题，多解法）
+```c++
+class Solution {
+public:
+    int firstMissingPositive(vector<int>& nums) {
+        for (int i = 0; i < nums.size(); i++) {
+            while (nums[i] > 0 && nums[i] != i + 1 && nums[i] <= nums.size() && nums[i] != nums[nums[i] - 1]) {
+                swap(nums, i, nums[i] - 1);
+            }
+        }
+        for (int i = 0; i < nums.size(); i++) {
+            if (i + 1 != nums[i]) return i + 1;
+        }
+        return nums.size() + 1;
+    }
+    void swap(vector<int>& nums, int a, int b) {
+        int tmp = nums[a];
+        nums[a] = nums[b];
+        nums[b] = tmp;
+    }
+};
+```
+
+
+
+#### 42 接雨水（单调栈，超级经典题，多解法）
 
 https://leetcode-cn.com/problems/trapping-rain-water/solution/jie-yu-shui-by-leetcode/
 
@@ -2455,7 +3182,7 @@ class Solution {
         int res = 0;
         for(int i = 0; i < height.length; i++){
             while(!stack.isEmpty() && height[i] > height[stack.peek()]){
-                int top = stack.pop();
+                int top = stack.pop(); // 注意这里拿到的是index，后面用的时候要取实际值
                 if(stack.isEmpty()) break; // 注意判空
                 int width = i - stack.peek() - 1;
                 int height_ = Math.min(height[i], height[stack.peek()]) - height[top];
@@ -2608,6 +3335,32 @@ class Solution {
 
 上面这种做法巧妙地避免了再进行字符串加法的工作，代码也短了很多，速度快了不少。这么一想第一种做法也可以稍微改下比如用List\<Integer>来存每次的结果
 
+```c++
+class Solution {
+public:
+    string multiply(string num1, string num2) {
+        if (num1 == "0" || num2 == "0") return "0";
+        vector<int> res(num1.size() + num2.size(), 0);
+        int sum = 0, digit1 = 0, digit2 = 0;
+        string res_str;
+        for (int i = num1.size() - 1; i >= 0; i--) {
+            for (int j = num2.size() - 1; j >= 0; j--) {
+                digit1 = num1[i] - '0';
+                digit2 = num2[j] - '0';
+                sum = digit1 * digit2 + res[i + j + 1];
+                res[i + j + 1] = sum % 10;
+                res[i + j] += sum / 10;
+            }
+        }
+        for (int i = 0; i < res.size(); i++) {
+            if (i == 0 && res[i] == 0) continue;
+            res_str += (res[i] + '0');
+        }
+        return res_str;
+    }
+};
+```
+
 
 
 #### 44 通配符匹配（比第10题略简单）
@@ -2713,7 +3466,6 @@ class Solution {
         int max = 0;
         int end = 0;
         int step = 0;
-        int[] dp = new int[len];
         for(int i = 0; i < len - 1; i++){
             max = Math.max(max, nums[i] + i);
             if(i == end){
@@ -2726,9 +3478,28 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        int step = 0;
+        int end = 0;
+        int max = 0;
+        for (int i = 0; i < nums.size() - 1; i++) {
+            max = std::max(max, i + nums[i]);
+            if (i == end) {
+                step++;
+                end = max;
+            }
+        }
+        return step;
+    }
+};
+```
 
 
-#### 46 全排列（老回溯题了）
+
+#### 46 全排列（回溯）
 
 给定一个不含重复数字的数组 nums ，返回其 所有可能的全排列 。你可以 按任意顺序 返回答案。
 
@@ -2789,7 +3560,7 @@ class Solution {
 
 
 
-#### 47 全排列二（类似第40题）
+#### 47 全排列二（回溯，类似40）
 
 给定一个可包含重复数字的序列 `nums` ，**按任意顺序** 返回所有不重复的全排列。
 
@@ -2838,6 +3609,34 @@ class Solution {
 
 用来保证list不重复的方法是：如果一个数字和前一个的值相同，就优先选前面的，也就是说，如果前面的数字visited为false，且值和当前的数字相同，那就不要选当前的数字
 
+```c++
+class Solution {
+public:
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        vector<bool> visited(nums.size(), false);
+        vector<vector<int>> res;
+        vector<int> path;
+        sort(nums.begin(), nums.end());
+        backtrack(res, path, nums, visited);
+        return res;
+    }
+    void backtrack(vector<vector<int>>& res, vector<int>& path, vector<int>& nums, vector<bool>& visited) {
+        if (path.size() == nums.size()) {
+            res.emplace_back(path);
+            return;
+        }
+        for (int i = 0; i < nums.size(); i++) {
+            if (visited[i] || (i > 0 && nums[i] == nums[i - 1] && !visited[i - 1])) continue;
+            visited[i] = true;
+            path.emplace_back(nums[i]);
+            backtrack(res, path, nums, visited);
+            visited[i] = false;
+            path.pop_back();
+        }
+    }
+};
+```
+
 
 
 #### 48 旋转图像（有点巧妙的找规律）
@@ -2869,6 +3668,32 @@ class Solution {
         }
     }
 }
+```
+
+另一种思路是：
+
+**先将 `n x n` 矩阵 `matrix` 按照左上到右下的对角线进行镜像对称**，**然后再对矩阵的每一行进行反转**
+
+```c++
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < i; j++) {
+                swap(matrix, i, j);
+            }
+        }
+        for (vector<int>& row : matrix) {
+            reverse(row.begin(), row.end());
+        }
+    }
+    void swap(vector<vector<int>>& matrix, int i, int j) {
+        int tmp = matrix[i][j];
+        matrix[i][j] = matrix[j][i];
+        matrix[j][i] = tmp;
+    }
+};
 ```
 
 
@@ -2918,6 +3743,25 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> map;
+        for (int i = 0; i < strs.size(); i++) {
+            string key = strs[i];
+            sort(key.begin(), key.end());
+            map[key].emplace_back(strs[i]);
+        }
+        vector<vector<string>> res;
+        for (auto it = map.begin(); it != map.end(); it++) {
+            res.emplace_back(it->second);
+        }
+        return res;
+    }
+};
+```
+
 
 
 #### 50 Pow(x,n)（快速幂，利用二进制）
@@ -2956,6 +3800,26 @@ class Solution {
         return res;
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    double myPow(double x, int n) {
+        double res = 1;
+        if (n == 0) return 1;
+        long n_ = n;
+        if (n_ < 0) n_ = -n_;
+        while (n_ > 0) {
+            if (n_ % 2 == 1) {
+                res *= x;
+            }
+            n_ = n_ >> 1;
+            x = x * x;
+        }
+        return n > 0 ? res : (1 / res);
+    }
+};
 ```
 
 
@@ -3030,6 +3894,39 @@ class Solution {
         return board;
     }
 }
+```
+
+```c++
+class Solution {
+public:
+
+    vector<vector<string>> solveNQueens(int n) {
+        vector<vector<string>> res;
+        vector<string> board(n, string(n, '.'));
+        vector<bool> cols(n, false);
+        vector<bool> diagonals1(2 * n - 1, false);
+        vector<bool> diagonals2(2 * n - 1, false);
+        backtrack(n, res, board, 0, cols, diagonals1, diagonals2);
+        return res;
+    }
+    void backtrack(int n, vector<vector<string>>& res, vector<string>& board, int row, vector<bool>& cols,
+                   vector<bool>& diagonals1, vector<bool>& diagonals2) {
+        if (row == n) {
+            res.push_back(board);
+            return;
+        }
+        for (int i = 0; i < n; i++) {
+            int diagonals1_idx = row - i + n - 1;
+            int diagonals2_idx = row + i;
+            if (cols[i] || diagonals1[diagonals1_idx] || diagonals2[diagonals2_idx]) continue;
+            cols[i] = diagonals1[diagonals1_idx] = diagonals2[diagonals2_idx] = true;
+            board[row][i] = 'Q';
+            backtrack(n, res, board, row + 1, cols, diagonals1, diagonals2);
+            cols[i] = diagonals1[diagonals1_idx] = diagonals2[diagonals2_idx] = false;
+            board[row][i] = '.';
+        }
+    }
+};
 ```
 
 
@@ -3248,6 +4145,28 @@ class Solution {
 
 + 语法：`res.toArray(new int[res.size()][]);`
 
+```c++
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        vector<vector<int>> res;
+        sort(intervals.begin(), intervals.end(), [](vector<int>&a, vector<int>& b) {
+            return a[0] == b[0] ? a[1] < b [1] : a[0] < b[0];
+        });
+        res.push_back({intervals[0][0], intervals[0][1]});
+        for (int i = 1; i < intervals.size(); i++) {
+            int end = res[res.size() - 1][1];
+            if (intervals[i][0] <= end) {
+                res[res.size() - 1][1] = max(end, intervals[i][1]);
+            } else {
+                res.push_back({intervals[i][0], intervals[i][1]});
+            }
+        }
+        return res;
+    }
+};
+```
+
 
 
 #### 57 插入区间（做了特别久的一道题）
@@ -3386,6 +4305,34 @@ class Solution {
     }
 
 }
+```
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        vector<vector<int>> res;
+        bool added = false;
+        for (int i = 0; i < intervals.size(); i++) {
+            if (newInterval[0] > intervals[i][1]) {
+                res.emplace_back(intervals[i]);
+            } else if (newInterval[1] < intervals[i][0]) {
+                if (!added) {
+                    added = true;
+                    res.emplace_back(newInterval);
+                }
+                res.emplace_back(intervals[i]);
+            } else {
+                newInterval[0] = min(newInterval[0], intervals[i][0]);
+                newInterval[1] = max(newInterval[1], intervals[i][1]);
+            }
+        }
+        if (!added) {
+            res.emplace_back(newInterval);
+        }
+        return res;
+    }
+};
 ```
 
 
@@ -4030,6 +4977,7 @@ class Solution {
 
 
 ```java
+// 2025第二次看，这个方法不好理解，建议用下面第二种
 class Solution {
     public int mySqrt(int x) {
         int low = 0, high = x, res = 0;
@@ -4046,6 +4994,27 @@ class Solution {
         return res;
     }
 }
+```
+
+
+
+```c++
+class Solution {
+public:
+    int mySqrt(int x) {
+        int low = 0, high = x;
+        int mid = 0;
+        long square = 0;
+        while (low < high) {
+            mid = low + (high - low) / 2 + 1;
+            square = (long)mid * mid;
+            if (square == x) return mid;
+            else if (square < x) low = mid;
+            else high = mid - 1;
+        }
+        return low;
+    }
+};
 ```
 
 
@@ -4138,6 +5107,34 @@ class Solution {
         return strb.toString();
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    string simplifyPath(string path) {
+        stringstream ss(path);
+        string part;
+        stack<string> stk;
+        while (getline(ss, part, '/')) {
+            if (part.size() == 0 || part == ".") {
+                continue;
+            } else if (part == "..") {
+                if (!stk.empty()) {
+                    stk.pop();
+                }
+            } else {
+                stk.push(part);
+            }
+        }
+        string res;
+        while (!stk.empty()) {
+            res = '/' + stk.top() + res;
+            stk.pop();
+        }
+        return res.size() == 0 ? "/" : res;
+    }
+};
 ```
 
 
@@ -4322,6 +5319,41 @@ class Solution {
 
 
 
+第二次用c++做的
+
+```c++
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int row = binarySearch(matrix, target);
+        if (row < 0) return false;
+        else return binarySearch(matrix[row], target);
+    }
+    int binarySearch(vector<vector<int>>& matrix, int target) {
+        int low = -1, high = matrix.size() - 1;
+        while (low < high) {
+            int mid = low + (high - low) / 2 + 1;
+            if (matrix[mid][0] == target) return mid;
+            else if (matrix[mid][0] < target) low = mid;
+            else high = mid - 1;
+        }
+        return low;
+    }
+    bool binarySearch(vector<int>& nums, int target) {
+        int low = 0, high = nums.size() - 1;
+        while (low <= high) {
+            int mid = low + (high - low) / 2;
+            if (nums[mid] == target) return true;
+            else if (nums[mid] < target) low = mid + 1;
+            else high = mid - 1;
+        }
+        return false;
+    }
+};
+```
+
+
+
 #### 75 颜色分类（三指针，partition，易错）
 
 给定一个包含红色、白色和蓝色、共 n 个元素的数组 nums ，原地对它们进行排序，使得相同颜色的元素相邻，并按照红色、白色、蓝色顺序排列。
@@ -4360,6 +5392,33 @@ class Solution {
         }
     }
 }
+```
+
+
+
+第二次用c++做的，有点不一样，没差多少，就是p0和p2的含义变了
+
+```c++
+class Solution {
+public:
+    void sortColors(vector<int>& nums) {
+        int p0 = 0, p1 = 0, p2 = nums.size() - 1;
+        while (p1 <= p2) {
+            if (nums[p1] == 0) {
+                nums[p1] = nums[p0];
+                nums[p0] = 0;
+                p0++;
+                p1++;
+            } else if (nums[p1] == 1) {
+                p1++;
+            } else {
+                nums[p1] = nums[p2];
+                nums[p2] = 2;
+                p2--;
+            }
+        }
+    }
+};
 ```
 
 
@@ -4496,6 +5555,84 @@ class Solution {
 
 
 
+c++版本 hashmap
+
+```c++
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        std::unordered_map<char, int> need, window;
+        for (char c : t) {
+            need[c]++;
+        }
+        int left = 0, right = 0, valid = 0, start = 0, len = INT_MAX;
+        while (right < s.size()) {
+            char c = s[right];
+            if (need.contains(c)) {
+                window[c]++;
+                if (window[c] == need[c]) {
+                    valid++;
+                }
+            }
+            right++;
+            while (valid == need.size()) {
+                char d = s[left];
+                if (len > (right - left)) {
+                    start = left;
+                    len = right - left;
+                }
+                if (need.count(d)) {
+                    if (window[d] == need[d]) {
+                        valid--;
+                    }
+                    window[d]--;
+                }
+                left++;
+            }
+        }
+        return len != INT_MAX ? s.substr(start, len) : "";
+    }
+};
+```
+
+第二次用c++写的：
+
+```c++
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        int len = INT_MAX, right = 0, left = 0, start = 0, valid = 0;
+        unordered_map<char, int> need, window;
+        for (char c : t) {
+            need[c]++;
+        }
+        while (right < s.size()) {
+            char c = s[right];
+            if (need.contains(c)) {
+                window[c]++;
+                if (window[c] == need[c]) valid++;
+            }
+            right++;
+            while (valid == need.size()) {
+                char d = s[left];
+                if (len > right - left) {
+                    len = right - left;
+                    start = left;
+                }
+                if (need.contains(d)) {
+                    if (window[d] == need[d]) valid--;
+                    window[d]--;
+                }
+                left++;
+            }
+        }
+        return len == INT_MAX ? "" : s.substr(start, len);
+    }
+};
+```
+
+
+
 #### 77 组合（需要剪枝的回溯）
 
 给定两个整数 n 和 k，返回范围 [1, n] 中所有可能的 k 个数的组合。
@@ -4542,9 +5679,34 @@ class Solution {
 }
 ```
 
+第二次用c++做的，没有剪枝：
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> combine(int n, int k) {
+        vector<vector<int>> res;
+        vector<int> subset;
+        backtrack(res, subset, n, k, 1);
+        return res;
+    }
+    void backtrack(vector<vector<int>>& res, vector<int>& subset, int n, int k, int start) {
+        if (subset.size() == k) {
+            res.emplace_back(subset);
+            return;
+        }
+        for (int i = start; i <= n; i++) {
+            subset.emplace_back(i);
+            backtrack(res, subset, n, k, i + 1);
+            subset.pop_back();
+        }
+    }
+};
+```
 
 
-#### 78 子集（有点特别的回溯）
+
+#### 78 子集（有点特别的回溯，元素无重不可重复选）
 
 给你一个整数数组 nums ，数组中的元素 互不相同 。返回该数组所有可能的子集（幂集）。
 
@@ -4599,9 +5761,31 @@ class Solution {
 
 这道题不能用39题的做法，39题的做法会导致结果变成123，13，23，3
 
+第二次用c++做的：
+
+```C++
+class Solution {
+public:
+    vector<vector<int>> subsets(vector<int>& nums) {
+        vector<vector<int>> res;
+        vector<int> subset;
+        backtrack(nums, subset, res, 0);
+        return res;
+    }
+    void backtrack(vector<int>& nums, vector<int>& subset, vector<vector<int>>& res, int start) {
+        res.emplace_back(subset);
+        for(int i = start; i < nums.size(); i++) {
+            subset.emplace_back(nums[i]);
+            backtrack(nums, subset, res, i + 1);
+            subset.pop_back();
+        } 
+    }
+};
+```
 
 
-#### 79 单词搜索（回溯）
+
+#### 79 单词搜索（DFS）
 
 给定一个 m x n 二维字符网格 board 和一个字符串单词 word 。如果 word 存在于网格中，返回 true ；否则，返回 false 。
 
@@ -4645,9 +5829,41 @@ class Solution {
 
 ```
 
+```C++
+class Solution {
+public:
+    int direction[4][2] = {{0,1}, {1,0}, {-1, 0}, {0,-1}};
+    bool exist(vector<vector<char>>& board, string word) {
+        int m = board.size();
+        int n = board[0].size();
+        vector<vector<bool>> visited(m, vector<bool>(n, false));
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (dfs(board, visited, i, j, word, 0)) return true;
+            }
+        }
+        return false;
+    }
+    bool dfs(vector<vector<char>>& board, vector<vector<bool>>& visited, int i, int j, string& word, int index) {
+        if (index == word.size()) return true;
+        if (!is_valid(board, visited, i, j) || board[i][j] != word[index]) return false;
+        visited[i][j] = true;
+        for (int k = 0; k < 4; k++) {
+            if (dfs(board, visited, i + direction[k][0], j + direction[k][1], word, index + 1)) return true;
+        }
+        visited[i][j] = false;
+        return false;
+    }
+    bool is_valid(vector<vector<char>>& board, vector<vector<bool>>& visited, int i, int j) {
+        if (i < 0 || j < 0 || i >= board.size() || j >= board[0].size() || visited[i][j]) return false;
+        return true;
+    }
+};
+```
 
 
-#### 80 删除有序数组中的重复项二（26题的进阶）
+
+#### 80 删除有序数组中的重复项二（双指针 26题的进阶）
 
 给你一个有序数组 nums ，请你 原地 删除重复出现的元素，使每个元素 最多出现两次 ，返回删除后数组的新长度。
 
@@ -4679,6 +5895,27 @@ class Solution {
         return nextPos;
     }
 }
+```
+
+双指针 c++
+
+```c++
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        int slow = 0;
+        int fast = 0;
+        while (fast < nums.size()) {
+            if (slow > 1 && nums[fast] == nums[slow - 2]) {
+            } else {
+                nums[slow] = nums[fast];
+                slow++;
+            }
+            fast++;
+        }
+        return slow;
+    }
+};
 ```
 
 
@@ -4737,6 +5974,36 @@ class Solution {
 }
 ```
 
+第二次用c++写的：
+
+```c++
+class Solution {
+public:
+    bool search(vector<int>& nums, int target) {
+        int low = 0, high = nums.size() - 1, mid = 0;
+        while (low <= high) {
+            mid = low + (high - low) / 2;
+            if (nums[mid] == target || nums[low] == target || nums[high] == target) return true;
+            else if (nums[mid] == nums[low]) low++;
+            else if (nums[mid] > nums[low]) {
+                if (target > nums[low] && target < nums[mid]) {
+                    high = mid - 1;
+                } else {
+                    low = mid + 1;
+                }
+            } else {
+                if (nums[mid] < target && nums[high] > target) {
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+
 
 
 #### 82 删除排序链表中的重复元素二
@@ -4771,6 +6038,40 @@ class Solution {
 }
 ```
 
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        ListNode* dummy = new ListNode(0,head);
+        ListNode* p = dummy;
+        ListNode* q = head;
+        while (q != nullptr) {
+            if (q->next != nullptr && q->val == q->next->val) {
+                while (q->next != nullptr && q->val == q->next->val) {
+                    q = q->next;
+                }
+            } else {
+                p->next = q;
+                p = p->next;
+            }
+            q = q->next;
+        }
+        p->next = nullptr;
+        return dummy->next;
+    }
+};
+```
+
 
 
 #### 83 删除排序链表中的重复元素
@@ -4795,6 +6096,33 @@ class Solution {
         return head;
     }
 }
+```
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        ListNode* p = head;
+        while (p!= nullptr && p->next != nullptr) {
+            if (p->val == p->next->val) {
+                p->next = p->next->next;
+            } else {
+                p = p->next;
+            }
+        }
+        return head;
+    }
+};
 ```
 
 
@@ -4835,6 +6163,29 @@ class Solution {
         return max;
     }
 }
+```
+
+c++版本代码，为了不花O(N)在heights首部添加辅助的0，在取left的时候特判stk是否为空，如果为空就取下标-1，就相当于加了辅助的那个数了。
+
+```c++
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        int res = 0;
+        stack<int> stk;
+        heights.push_back(0);
+        for (int i = 0; i < heights.size(); i++) {
+            while (!stk.empty() && heights[stk.top()] > heights[i]) {
+                int top = heights[stk.top()];
+                stk.pop();
+                int left = stk.empty() ? -1 : stk.top();
+                res = max(res, top * (i - left - 1));
+            }
+            stk.push(i);
+        }
+        return res;
+    }
+};
 ```
 
 
@@ -4882,6 +6233,42 @@ class Solution {
 ```
 
 时间复杂度为O(MN)
+
+```c++
+class Solution {
+public:
+    int maximalRectangle(vector<vector<char>>& matrix) {
+        int res = 0;
+        vector<int> heights(matrix[0].size(), 0);
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix[0].size(); j++) {
+                if (matrix[i][j] == '1') {
+                    heights[j]++;
+                } else {
+                    heights[j] = 0;
+                }
+            }
+            res = max(res, largestRectangleArea(heights));
+        }
+        return res;
+    }
+    int largestRectangleArea(vector<int>& heights) {
+        int res = 0;
+        stack<int> stk;
+        heights.push_back(0);
+        for (int i = 0; i < heights.size(); i++) {
+            while (!stk.empty() && heights[stk.top()] > heights[i]) {
+                int top = heights[stk.top()];
+                stk.pop();
+                int left = stk.empty() ? -1 : stk.top();
+                res = max(res, top * (i - left - 1));
+            }
+            stk.push(i);
+        }
+        return res;
+    }
+};
+```
 
 
 
@@ -4996,6 +6383,42 @@ class Solution {
 }
 ```
 
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* partition(ListNode* head, int x) {
+        ListNode* dummy1 = new ListNode(0,nullptr);
+        ListNode* dummy2 = new ListNode(0,nullptr);
+        ListNode* p1 = dummy1;
+        ListNode* p2 = dummy2;
+        ListNode* p = head;
+        while (p != nullptr) {
+            if (p->val < x) {
+                p1->next = p;
+                p1 = p1->next;
+            } else {
+                p2->next = p;
+                p2 = p2->next;
+            }
+            p = p->next;
+        }
+        p1->next = dummy2->next;
+        p2->next = nullptr;
+        return dummy1->next;
+    }
+};
+```
+
 
 
 #### 87 扰乱字符串（区间DP，记忆化搜索，递归）
@@ -5102,6 +6525,58 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    int dp[30][30][31] = {};
+    string s1;
+    string s2;
+    bool isScramble(string s1, string s2) {
+        this->s1 = s1;
+        this->s2 = s2;
+        if (s1.length() != s2.length()) return false;
+        return isScramble(0, 0, s1.length());
+    }
+    bool isScramble(int i1, int i2, int len) {
+        if (dp[i1][i2][len] == 1) return true;
+        else if (dp[i1][i2][len] == -1) return false;
+        if (s1.substr(i1, len) == s2.substr(i2, len)) {
+            dp[i1][i2][len] = 1;
+            return true;
+        }
+        if (!isSimilar(i1, i2, len)) {
+            dp[i1][i2][len] = -1;
+            return false;
+        }
+        for (int i = 1; i < len; i++) {
+            if (isScramble(i1, i2, i) && isScramble(i1 + i, i2 + i, len - i)) {
+                dp[i1][i2][len] = 1;
+                return true;
+            }
+            if (isScramble(i1, i2 + len - i, i) && isScramble(i1 + i, i2, len - i)) {
+                dp[i1][i2][len] = 1;
+                return true;
+            }
+        }
+        dp[i1][i2][len] = -1;
+        return false;
+    }
+    bool isSimilar(int i1, int i2, int len) {
+        unordered_map<char, int> map;
+        for (int i = i1; i < i1 + len; i++) {
+            map[s1[i]]++;
+        }
+        for (int i = i2; i < i2 + len; i++) {
+            map[s2[i]]--;
+        }
+        for (auto iter = map.begin(); iter != map.end(); iter++) {
+            if (iter->second != 0) return false;
+        }
+        return true;
+    }
+};
+```
+
 
 
 #### 88 原地合并两个有序数组
@@ -5140,6 +6615,32 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        int pos = m + n - 1;
+        int p1 = m - 1;
+        int p2 = n - 1;
+        while(p1 >= 0 && p2 >= 0 && pos >= 0) {
+            if (nums1[p1] >= nums2[p2]) {
+                nums1[pos] = nums1[p1];
+                p1--;
+            } else {
+                nums1[pos] = nums2[p2];
+                p2--;
+            }
+            pos--;
+        }
+        while(p2 >= 0 && pos >= 0) {
+            nums1[pos] = nums2[p2];
+            pos--;
+            p2--;
+        }
+    }
+};
+```
+
 
 
 #### 89 格雷编码（挺有趣的数学题，需要记住规律）
@@ -5175,9 +6676,28 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    vector<int> grayCode(int n) {
+        vector<int> res;
+        res.emplace_back(0);
+        int head = 1, size = 0;
+        for (int i = 0; i < n; i++) {
+            size = res.size();
+            for (int j = size - 1; j >= 0; j--) {
+                res.emplace_back(head + res[j]);
+            }
+            head <<= 1;
+        }
+        return res;
+    }
+};
+```
 
 
-#### 90 子集二（回溯，含重复元素）
+
+#### 90 子集二（回溯，元素有重不可重复选）
 
 给你一个整数数组 nums ，其中可能包含重复元素，请你返回该数组所有可能的子集（幂集）。
 
@@ -5262,6 +6782,30 @@ class Solution {
 }
 ```
 
+第二次做，c++版本代码：
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> res;
+        vector<int> subset;
+        backtrack(res, subset, nums, 0);
+        return res;
+    }
+    void backtrack(vector<vector<int>>& res, vector<int>& subset, vector<int>& nums, int start) {
+        res.emplace_back(subset);
+        for (int i = start; i < nums.size(); i++) {
+            if (i > start && nums[i] == nums[i - 1]) continue;
+            subset.emplace_back(nums[i]);
+            backtrack(res, subset, nums, i + 1);
+            subset.pop_back();
+        }
+    }
+};
+```
+
 
 
 #### 91 解码方法（一维DP，递推，不能使用深搜）
@@ -5335,6 +6879,28 @@ class Solution {
 }
 ```
 
+```c++
+class Solution {
+public:
+    int numDecodings(string s) {
+        if (s[0] == '0') return 0;
+        int first = 1, second = 1, third = 0;
+        for (int i = 1; i < s.size(); i++) {
+            if (s[i] != '0') {
+                third += second;
+            }
+            if (s[i - 1] != '0' && 10 * (s[i - 1] - '0') + (s[i] - '0') < 27) {
+                third += first;
+            }
+            first = second;
+            second = third;
+            third = 0;
+        }
+        return second;
+    }
+};
+```
+
 
 
 #### 92 反转链表二
@@ -5366,6 +6932,38 @@ class Solution {
 要考虑几种边界条件，left = 1; right = nums.length; left = right
 
 我用的方法是不断把节点摘下来插入到前面
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        ListNode dummy(0, head);
+        ListNode* p = &dummy;
+        for (int i = 0; i < left - 1; i++) {
+            p = p->next;
+        }
+        ListNode* q = p->next;
+        ListNode* del = nullptr;
+        for (int i = left; i < right; i++) {
+            del = q->next;
+            q->next = del->next;
+            del->next = p->next;
+            p->next = del;
+        }
+        return dummy.next;
+    }
+};
+```
 
 
 
@@ -5414,6 +7012,46 @@ class Solution {
         }
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    vector<string> restoreIpAddresses(string s) {
+        vector<string> res;
+        vector<string> current;
+        backtrack(res, current, s, 0);
+        return res;
+    }
+    void backtrack(vector<string>& res, vector<string>& current, string& str, int start) {
+        if (start == str.size() && current.size() == 4) {
+            string ip = "";
+            for (int i = 0; i < 4; i++) {
+                ip += current[i];
+                if (i != 3) ip += '.';
+            }
+            res.emplace_back(ip);
+            return;
+        }
+        if (start >= str.size() || current.size() >= 4) return;
+
+        if (str[start] == '0') {
+            current.emplace_back("0");
+            backtrack(res, current, str, start + 1);
+            current.pop_back();
+        } else {
+            int sum = 0;
+            for (int i = 0; i < 3 && start + i < str.size(); i++) {
+                sum = sum * 10 + (str[start + i] - '0');
+                if (sum <= 255) {
+                    current.emplace_back(str.substr(start, i + 1));
+                    backtrack(res, current, str, start + i + 1);
+                    current.pop_back();
+                }
+            }
+        }
+    }
+};
 ```
 
 
@@ -5500,6 +7138,44 @@ class Solution {
 }
 ```
 
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<TreeNode*> generateTrees(int n) {
+        return generateTrees(1, n);
+    }
+    vector<TreeNode*> generateTrees(int start, int end) {
+        vector<TreeNode*> res;
+        if (start > end) {
+            res.emplace_back(nullptr);
+            return res;
+        }
+        for (int i = start; i <= end; i++) {
+            vector<TreeNode*> left = generateTrees(start, i - 1);
+            vector<TreeNode*> right = generateTrees(i + 1, end);
+            for (int j = 0; j < left.size(); j++) {
+                for (int k = 0; k < right.size(); k++) {
+                    TreeNode* root = new TreeNode(i, left[j], right[k]);
+                    res.emplace_back(root);
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
 
 
 #### 96 不同的二叉搜索树（带记忆的递归）
@@ -5531,6 +7207,27 @@ class Solution {
         return res;
     }
 }
+```
+
+```c++
+class Solution {
+public:
+    int numTrees(int n) {
+        vector<int> dp(n + 1, 0);
+        dp[0] = 1;
+        dp[1] = 1;
+        return count(n, dp);
+    }
+    int count(int n, vector<int>& dp) {
+        if (dp[n] != 0) return dp[n];
+        int sum = 0;
+        for (int i = 1; i <= n; i++) {
+            sum += count(i - 1, dp) * count(n - i, dp);
+        }
+        dp[n] = sum;
+        return sum;
+    }
+};
 ```
 
 
@@ -5625,6 +7322,33 @@ class Solution {
 }
 ```
 
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        return isValidBST(root, LONG_MIN, LONG_MAX);
+    }
+    bool isValidBST(TreeNode* root, long low, long high) {
+        if (root == nullptr) return true;
+        if (root->val <= low) return false;
+        if (root->val >= high) return false;
+        if (!isValidBST(root->left, low, root->val)) return false;
+        return isValidBST(root->right, root->val, high);
+    }
+};
+```
+
 
 
 #### 99 恢复二叉搜索树（有一点点难的中序遍历）
@@ -5675,7 +7399,48 @@ class Solution {
 
 **进阶：**使用 `O(n)` 空间复杂度的解法很容易实现。你能想出一个只使用 `O(1)` 空间的解决方案吗？
 
+第二次做，参考之前的思路简化了代码：
 
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* pre = nullptr;
+    TreeNode* node1 = nullptr;
+    TreeNode* node2 = nullptr;
+    void recoverTree(TreeNode* root) {
+        inorder(root);
+        if (node1 == nullptr) return;
+        int tmp = node1->val;
+        node1->val = node2->val;
+        node2->val = tmp;
+    }
+    void inorder(TreeNode* root) {
+        if (root == nullptr) return;
+        inorder(root->left);
+        if (pre != nullptr && pre->val > root->val) {
+            if (node1 == nullptr) {
+                node1 = pre;
+                node2 = root;
+            } else {
+                node2 = root;
+            }
+        }
+        pre = root;
+        inorder(root->right);
+    }
+};
+```
 
 
 
